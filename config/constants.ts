@@ -33,3 +33,5 @@ let IS_DEV_ENVIRONMENT = false;
 
 export const CONNECTION_NETWORK = IS_DEV_ENVIRONMENT ?  WalletAdapterNetwork.Devnet : WalletAdapterNetwork.Mainnet;
 export const CONNECTION_NETWORK_RPC = CONNECTION_NETWORK === WalletAdapterNetwork.Mainnet ? SOLANA_RPC_HOST_MAINNET : SOLANA_RPC_HOST_DEVNET;
+
+export const NFT_VAULT_POOL_SEED = "nft_vault_pool";

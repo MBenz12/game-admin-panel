@@ -216,7 +216,7 @@ export async function playTransaction(program: Program<Slots>, provider: Provide
   const mint = gameData.tokenMint;
   const payerAta = await getAta(mint, provider.wallet.publicKey);
   
-  const instruction = await getCreateAtaInstruction(provider, payerAta, mint, provider.wallet.publicKey);
+  let instruction = await getCreateAtaInstruction(provider, payerAta, mint, provider.wallet.publicKey);
   if (instruction) transaction.add(instruction);
   if (mint.toString() === NATIVE_MINT.toString()) {
     transaction.add(
@@ -231,6 +231,8 @@ export async function playTransaction(program: Program<Slots>, provider: Provide
   const gameTreasuryAta = await getAta(mint, game, true);
   const commissionTreasury = gameData.commissionWallet;
   const commissionTreasuryAta = await getAta(mint, commissionTreasury);
+  instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
+  if (instruction) transaction.add(instruction);
   transaction.add(
     program.transaction.play(betNo, {
       accounts: {

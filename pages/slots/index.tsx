@@ -26,11 +26,11 @@ import {
 require("@solana/wallet-adapter-react-ui/styles.css");
 
 const idl_slots = require("idl/slots.json");
-const programID = idl_slots.metadata.address;
 
 export default function SlotsPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
+  const [programID, setProgramID] = useState(idl_slots.metadata.address);
 
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
@@ -251,6 +251,8 @@ export default function SlotsPage() {
     const gameTreasuryAta = await getAta(mint, game, true);
     const commissionTreasury = gameData.commissionWallet;
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
+    instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
+    if (instruction) transaction.add(instruction);
     transaction.add(
       program.transaction.play(betNo, {
         accounts: {
@@ -559,12 +561,15 @@ export default function SlotsPage() {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
       <div className="flex justify-center mt-[100px]">
-        <WalletMultiButton className="bg-black" />
+        <WalletMultiButton/>
       </div>
     );
   }
   return (
     <div className="text-black flex gap-2 flex-col p-2">
+      <div className="flex justify-center">
+        <WalletMultiButton />
+      </div>
       <div className="flex items-center">
         NETWORK:
         <select className="border-2 border-black p-2" onChange={(e) => setNetwork(e.target.value as WalletAdapterNetwork)} value={network}>
@@ -572,8 +577,13 @@ export default function SlotsPage() {
           <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
         </select>
       </div>
-      <div className="flex justify-center">
-        <WalletMultiButton className="bg-black" />
+      <div>
+        Program ID:{" "}
+        <input
+          className="w-[450px] border-2 border-black p-2"
+          onChange={(e) => setProgramID(e.target.value)}
+          value={programID}
+        />
       </div>
       <div>
         Game Name:{" "}
