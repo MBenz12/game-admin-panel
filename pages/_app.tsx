@@ -7,6 +7,7 @@ import { SlopeWalletAdapter, SolletWalletAdapter } from '@solana/wallet-adapter-
 import { CONNECTION_NETWORK, CONNECTION_NETWORK_RPC } from 'config/constants';
 import type { AppProps } from 'next/app';
 import { useMemo } from 'react';
+import { ToastContainer } from "react-toastify";
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -23,6 +24,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets}>
         <WalletModalProvider>
+          <ToastContainer enableMultiContainer/>
           <Component {...pageProps} />
         </WalletModalProvider>          
       </WalletProvider>

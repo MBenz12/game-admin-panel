@@ -1,3 +1,5 @@
+import { Metaplex } from "@metaplex-foundation/js";
+import * as anchor from '@project-serum/anchor';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 
@@ -38,4 +40,43 @@ export const getAssociatedTokenAddressAndTransaction = async (connection: Connec
     }
 
     return {transaction, sourceATA, recipientATA};
+}
+
+export const getNftMetaData = async (mintAddress : PublicKey, connection: Connection) =>
+{
+    return await Metaplex.make(connection).nfts().findByMint({ mintAddress }).run();
+}
+
+
+export interface raffleTransactionDataType
+{
+    connection: Connection,
+    wallet: anchor.Wallet,
+    raffleAddress: PublicKey,
+    raffleTicketPrice: number,
+    raffleBank: PublicKey,
+    ticketAmount: number,
+    currencyType: string,
+    splTokenPublicKey: PublicKey,
+}
+
+export interface vaultTrancationDataType 
+{
+    connection: Connection,
+    wallet: anchor.Wallet,
+    sktMint: PublicKey,
+    claimerAta: PublicKey,
+    vault: PublicKey,
+    vaultPool: PublicKey,
+    vaultPoolAta: PublicKey,
+    transactionPrice: number,
+    isHolder: boolean,
+    exchangeOption: number,
+    kittyCoinsGrantAmount: number
+}
+
+export enum eInstructionsType
+{
+    buyKittyCoins = "buyKittyCoins",
+    buyRaffleTicket = "buyRaffleTicket"
 }

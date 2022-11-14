@@ -1,0 +1,27 @@
+{
+	"name":"",
+	"symbol":"",
+	"description":"Sol Kitties Raffles",
+	"image":"",
+	"seller_fee_basis_points": 900,
+	"external_url": "https://www.solkitties.net/raffles",
+	"collection": {
+		"name": "Sol Kitties Raffles",
+		"family": "Sol Kitties"
+	},
+	"properties": {
+		"files": [
+			{
+				"uri": "",
+				"type": "image/png"
+			}
+		],
+		"category": "image",
+		"creators": [
+			{
+				"address": "",
+				"share": 100
+			}
+		]
+	}
+}
