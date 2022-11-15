@@ -18,7 +18,7 @@
     "@solana/wallet-adapter-material-ui": "^0.16.20",
     "@solana/wallet-adapter-phantom": "^0.9.17",
     "@solana/wallet-adapter-react": "^0.15.24",
-    "@solana/wallet-adapter-react-ui": "^0.9.22",
+    "@solana/wallet-adapter-react-ui": "0.9.21",
     "@solana/wallet-adapter-solflare": "^0.6.18",
     "@solana/wallet-adapter-torus": "^0.11.23",
     "@solana/wallet-adapter-wallets": "^0.19.5",

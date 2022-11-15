@@ -1,8 +1,9 @@
 import {
-  bundlrStorage,
-  BundlrStorageDriver, keypairIdentity,
-  Metaplex, toMetaplexFile, walletAdapterIdentity
+    bundlrStorage,
+    BundlrStorageDriver, keypairIdentity,
+    Metaplex, toMetaplexFile, walletAdapterIdentity
 } from "@metaplex-foundation/js";
+import { CreateMetadataV2, DataV2, Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import * as anchor from '@project-serum/anchor';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -10,33 +11,31 @@ import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
-  BlockheightBasedTransactionConfirmationStrategy, Cluster, clusterApiUrl, Connection,
-  LAMPORTS_PER_SOL, ParsedInstruction, ParsedTransactionWithMeta,
-  PublicKey, Signer,
-  SYSVAR_RENT_PUBKEY,
-  Transaction
+    BlockheightBasedTransactionConfirmationStrategy, Cluster, clusterApiUrl, Connection,
+    LAMPORTS_PER_SOL, ParsedInstruction, ParsedTransactionWithMeta,
+    PublicKey, Signer,
+    SYSVAR_RENT_PUBKEY,
+    Transaction
 } from '@solana/web3.js';
 import axios from "axios";
 import bs58 from "bs58";
 import { Buffer } from 'buffer';
 import {
-  CONNECTION_NETWORK, eCurrencyType, GLOBAL_ACCOUNT_SEED, NFT_VAULT_POOL_SEED, RAFFLE_STORE_BUYERS, REACT_APP_RAFFLES_PROGRAM_ID, REACT_APP_RAFFLE_VAULT_WALLET_ADDRESS, REACT_APP_SKT_TOKEN_ADDRESS, SOLANA_RPC_HOST_MAINNET,
-  SPLTOKENS_MAP_GET_TOKEN_NAME, VAULT_ADDRESS, VAULT_SKT_SEED_PREFIX
+    CONNECTION_NETWORK, eCurrencyType, GLOBAL_ACCOUNT_SEED, NFT_VAULT_POOL_SEED, RAFFLE_STORE_BUYERS, REACT_APP_RAFFLES_PROGRAM_ID, REACT_APP_RAFFLE_VAULT_WALLET_ADDRESS, REACT_APP_SKT_TOKEN_ADDRESS, SOLANA_RPC_HOST_MAINNET,
+    SPLTOKENS_MAP_GET_TOKEN_NAME, VAULT_ADDRESS, VAULT_SKT_SEED_PREFIX
 } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction, raffleTransactionDataType } from "config/utils";
+import { saveAs } from 'file-saver';
 import { AnchorRaffleTicket } from "idl/anchor_raffle_ticket";
 import { useEffect, useRef, useState } from 'react';
 import {
-  getAndPrintRaffleAccount,
-  getBuyTicketTransactionBySOL,
-  getBuyTicketTransactionBySPL, getInitRaffleTransaction, getRaffleAccount, getRaffleFinalizeTransaction, getTransferSPLTokenTransaction
+    getAndPrintRaffleAccount,
+    getBuyTicketTransactionBySOL,
+    getBuyTicketTransactionBySPL, getInitRaffleTransaction, getRaffleAccount, getRaffleFinalizeTransaction, getTransferSPLTokenTransaction
 } from "service/programsHelper";
 import { callRafflesAPI } from "service/rafflesServiceProvider";
 import { eRaffleType } from "types/enum/RaffleEnum";
 import { initRaffleTransactionDataType, raffleFinalizeDataType } from "types/interface/RaffleInterface";
-//import {writeJsonFile} from 'write-json-file';
-import { CreateMetadataV2, DataV2, Metadata } from "@metaplex-foundation/mpl-token-metadata";
-import { saveAs } from 'file-saver';
 
 const { SystemProgram, Keypair } = web3;
 const idl_raffle = require('idl/anchor_raffle_ticket.json');
@@ -46,7 +45,6 @@ const onchain_json = require("minting/OnChain.json");
 const uri_json = require("minting/URI.json");
 
 const programID = REACT_APP_RAFFLES_PROGRAM_ID;
-require("@solana/wallet-adapter-react-ui/styles.css");
 
 
 export default function Rust()

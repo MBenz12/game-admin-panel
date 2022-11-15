@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
 import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
@@ -23,8 +24,6 @@ import {
   getPlayerAddress,
   isAdmin
 } from "./utils";
-require("@solana/wallet-adapter-react-ui/styles.css");
-
 const idl_slots = require("idl/slots.json");
 
 export default function SlotsPage() {
@@ -561,7 +560,7 @@ export default function SlotsPage() {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
       <div className="flex justify-center mt-[100px]">
-        <WalletMultiButton/>
+        <WalletMultiButton />
       </div>
     );
   }

@@ -11,7 +11,6 @@ import { NFT_VAULT_POOL_SEED } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction } from "config/utils";
 import { MintMachine } from "idl/mint_machine";
 import { useEffect, useMemo, useState } from "react";
-require("@solana/wallet-adapter-react-ui/styles.css");
 
 const {SystemProgram, Keypair} = web3;
 const idl_mint_machine = require("idl/mint_machine.json");
