@@ -5,46 +5,26 @@ import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import {
-  clusterApiUrl,
-  Connection, LAMPORTS_PER_SOL,
-  PublicKey,
-  SystemProgram,
-  SYSVAR_INSTRUCTIONS_PUBKEY,
-  Transaction
-} from "@solana/web3.js";
+import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
+import Header from "components/Header";
 import { eCurrencyType, SPLTOKENS_MAP } from "config/constants";
-import { Slots } from "idl/slots";
+import { Coinflip } from "idl/coinflip";
 import { useEffect, useMemo, useState } from "react";
-import {
-  convertLog, default_commission, default_community, game_name,
-  getAta,
-  getCreateAtaInstruction,
-  getGameAddress,
-  getPlayerAddress,
-  isAdmin
-} from "./utils";
-const idl_slots = require("idl/slots.json");
+import { convertLog, default_commission, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress, isAdmin } from "./utils";
 
-export default function SlotsPage() {
+const idl_coinflip = require("idl/coinflip.json");
+
+export default function CoinflipPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
-  const [programID, setProgramID] = useState(idl_slots.metadata.address);
+  const [programID, setProgramID] = useState(idl_coinflip.metadata.address);
 
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
   function getProviderAndProgram() {
-    const provider = new Provider(
-      connection,
-      anchorWallet,
-      Provider.defaultOptions()
-    );
+    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
 
-    const program = new Program(
-      idl_slots,
-      programID,
-      provider
-    ) as Program<Slots>;
+    const program = new Program(idl_coinflip, programID, provider) as Program<Coinflip>;
 
     return { provider, program };
   }
@@ -52,10 +32,10 @@ export default function SlotsPage() {
   const [prices] = useState([0.05, 0.1, 0.25, 0.5, 1, 2]);
   const [price, setPrice] = useState(0.05);
   const [betNo, setBetNo] = useState(0);
+  const [betNumber, setBetNumber] = useState(0);
   const [gameData, setGameData] = useState<any>();
   const [playerData, setPlayerData] = useState<any>();
   const [playerBalance, setPlayerBalance] = useState(0);
-  const [communityBalances, setCommunityBalances] = useState<Array<number>>([]);
   const [gameBalance, setGameBalance] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [fundAmount, setFundAmount] = useState(0);
@@ -63,133 +43,45 @@ export default function SlotsPage() {
   const [newTokenType, setNewTokenType] = useState(false);
   const [commissionWallet, setCommissionWallet] = useState(default_commission.toString());
   const [commissionFee, setCommissionFee] = useState(3);
-  const [minRoundsBeforeWin, setMinRoundsBeforeWin] = useState(5);
-  const [winPercents, setWinPercents] = useState([
-    [25, 15, 7.5],
-    [20, 10, 5],
-    [15, 5, 2.5],
-    [10, 2.5, 1.5],
-    [5, 2, 1],
-    [2, 1, 0.5],
-  ]);
+  const [winPercents, setWinPercents] = useState([47.5, 47.5, 40, 40, 25, 16.7]);
 
-  const [jackpot, setJackpot] = useState(14.4);
-  const [communityWallets, setCommunityWallets] = useState<Array<string>>([]);
-  const [newCommunityWallets, setNewCommunityWallets] = useState<Array<string>>([default_community.toString()]);
   const sktMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.SKT)!);
-  const dustMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.DUST)!);
-  const usdcMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.USDC)!);
+  // const dustMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.DUST)!);
+  // const usdcMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.USDC)!);
   const splTokenMint = sktMint;
 
-  const [newRoyalties, setNewRoyalties] = useState<Array<number>>([5]);
   const [gamename, setGamename] = useState(game_name);
 
-  async function initGame()
-  {
+  async function initGame() {
     const { provider, program } = getProviderAndProgram();
     const [game, game_bump] = await getGameAddress(gamename, provider.wallet.publicKey);
     const mint = newTokenType ? splTokenMint : NATIVE_MINT;
     const transaction = new Transaction();
 
-    console.log("Init Game:")
+    console.log("Init Game:");
     console.log("ProgramId:", program.programId.toString());
     console.log("Mint Address:", mint.toString());
 
     const gameTreasuryAta = await getAta(mint, game, true);
-    
-    let instruction = await getCreateAtaInstruction(
-      provider,
-      gameTreasuryAta,
-      mint,
-      game
-    );
+
+    let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
     if (instruction) transaction.add(instruction);
-  
-    for (const communityWallet of newCommunityWallets) {
-      const communityTreasury = new PublicKey(communityWallet);
-      const communityTreasuryAta = await getAta(mint, communityTreasury);
-    
-      const instruction = await getCreateAtaInstruction(
-        provider,
-        communityTreasuryAta,
-        mint,
-        communityTreasury
-      );
-      if (instruction) transaction.add(instruction);    
-    }
 
     const commissionTreasury = new PublicKey(commissionWallet);
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
-    instruction = await getCreateAtaInstruction(
-      provider,
-      commissionTreasuryAta,
-      mint,
-      commissionTreasury
-    );
+    instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
     if (instruction) transaction.add(instruction);
 
     transaction.add(
-      program.transaction.createGame(
-        gamename,
-        game_bump,
-        mint,
-        newCommunityWallets.map((addr) => new PublicKey(addr)),
-        newRoyalties.map((royalty) => royalty * 100),
-        new PublicKey(commissionWallet),
-        commissionFee * 100,
-        {
-          accounts: {
-            payer: provider.wallet.publicKey,
-            game,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      )
+      program.transaction.createGame(gamename, game_bump, mint, {
+        accounts: {
+          payer: provider.wallet.publicKey,
+          game,
+          systemProgram: SystemProgram.programId,
+        },
+      })
     );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
-    await provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
-    fetchData();
-  }
-
-  async function updateCommunityWallet(index: number, remove: boolean) {
-    const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const gameData = await program.account.game.fetchNullable(game);
-    if (!gameData) return;
-    const mint = gameData?.tokenMint;
-
-    const transaction = new Transaction();
-    const communityWallet = newCommunityWallets[index];
-    const communityTreasury = new PublicKey(communityWallet);
-    const communityTreasuryAta = await getAta(mint, communityTreasury);
-    const instruction = await getCreateAtaInstruction(
-      provider,
-      communityTreasuryAta,
-      mint,
-      communityTreasury
-    );
-    if (instruction) transaction.add(instruction);
-    
-    transaction.add(
-      program.transaction.setCommunityWallet(
-        new PublicKey(communityWallet),
-        remove ? 10001 : newRoyalties[index] * 100,
-        {
-          accounts: {
-            payer: provider.wallet.publicKey,
-            game,
-          },
-        }
-      )
-    );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -198,10 +90,7 @@ export default function SlotsPage() {
   async function addPlayer() {
     const { provider, program } = getProviderAndProgram();
     const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const [player, bump] = await getPlayerAddress(
-      provider.wallet.publicKey,
-      game
-    );
+    const [player, bump] = await getPlayerAddress(provider.wallet.publicKey, game);
 
     const transaction = new Transaction();
 
@@ -215,10 +104,7 @@ export default function SlotsPage() {
         },
       })
     );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -242,54 +128,37 @@ export default function SlotsPage() {
         SystemProgram.transfer({
           fromPubkey: provider.wallet.publicKey,
           toPubkey: payerAta,
-          lamports: prices[betNo] * LAMPORTS_PER_SOL
+          lamports: prices[betNo] * LAMPORTS_PER_SOL,
         }),
         createSyncNativeInstruction(payerAta)
-      )
+      );
     }
     const gameTreasuryAta = await getAta(mint, game, true);
-    const commissionTreasury = gameData.commissionWallet;
+    const commissionTreasury = gameData.royaltyWallet;
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
     instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
     if (instruction) transaction.add(instruction);
     transaction.add(
-      program.transaction.play(betNo, {
+      program.transaction.play(betNo, betNumber, {
         accounts: {
           payer: provider.wallet.publicKey,
           payerAta,
           player,
           game,
           gameTreasuryAta,
-          commissionTreasuryAta,
+          royaltyTreasuryAta: commissionTreasuryAta,
           instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
         },
       })
     );
 
-    for (const communityWallet of gameData.communityWallets) {
-      const communityTreasuryAta = await getAta(mint, communityWallet);
-      transaction.add(
-        program.transaction.sendToCommunityWallet({
-          accounts: {
-            game,
-            gameTreasuryAta,
-            communityTreasuryAta,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          },
-        })
-      );
-    }
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection,
-      { skipPreflight: true }
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
 
     const playerData = await program.account.player.fetchNullable(player);
-    let status = playerData?.status;
+    let status = playerData?.rand;
     console.log(status);
     if (status) {
       await fetchData();
@@ -319,29 +188,10 @@ export default function SlotsPage() {
     if (gameData) {
       setTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
       setNewTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
-      setCommunityWallets(
-        gameData.communityWallets.map((key) => key.toString())
-      );
-      setNewCommunityWallets(
-        gameData.communityWallets.map((key) => key.toString())
-      );
-      setNewRoyalties(gameData.royalties.map((royalty) => royalty / 100));
-      setCommunityBalances(
-        gameData.communityBalances.map((balance) => balance.toNumber())
-      );
       setGameBalance(gameData.mainBalance.toNumber());
-      setJackpot(gameData.jackpot.toNumber() / LAMPORTS_PER_SOL);
-      setCommissionFee(gameData.commissionFee / 100);
-      setMinRoundsBeforeWin(gameData.minRoundsBeforeWin);
+      setCommissionFee(gameData.royaltyFee / 100);
       // @ts-ignore
-      const winPercents = gameData.winPercents.map(percents => {
-        const boundries = [...percents];
-        for (let i = 0; i < 2; i++) {
-          boundries[i] -= boundries[i + 1];
-        }
-        return boundries;
-      });
-      setWinPercents(winPercents);
+      setWinPercents(gameData.winPercents.map((percent) => percent / 200));
     }
   }
 
@@ -354,12 +204,7 @@ export default function SlotsPage() {
     const transaction = new Transaction();
 
     const claimerAta = await getAta(mint, provider.wallet.publicKey);
-    const instruction = await getCreateAtaInstruction(
-      provider,
-      claimerAta,
-      mint,
-      provider.wallet.publicKey
-    );
+    const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
     if (instruction) transaction.add(instruction);
     const gameTreasuryAta = await getAta(mint, game, true);
     transaction.add(
@@ -376,18 +221,9 @@ export default function SlotsPage() {
       })
     );
     if (mint.toString() === NATIVE_MINT.toString()) {
-      transaction.add(
-        createCloseAccountInstruction(
-          claimerAta,
-          provider.wallet.publicKey,
-          provider.wallet.publicKey,
-        )
-      );
+      transaction.add(createCloseAccountInstruction(claimerAta, provider.wallet.publicKey, provider.wallet.publicKey));
     }
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -404,23 +240,17 @@ export default function SlotsPage() {
     if (instruction) transaction.add(instruction);
     const gameTreasuryAta = await getAta(mint, game, true);
     transaction.add(
-      program.transaction.withdraw(
-        new anchor.BN(LAMPORTS_PER_SOL * withdrawAmount),
-        {
-          accounts: {
-            claimer: provider.wallet.publicKey,
-            claimerAta,
-            game,
-            gameTreasuryAta,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          },
-        }
-      )
+      program.transaction.withdraw(new anchor.BN(LAMPORTS_PER_SOL * withdrawAmount), {
+        accounts: {
+          claimer: provider.wallet.publicKey,
+          claimerAta,
+          game,
+          gameTreasuryAta,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+      })
     );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -429,52 +259,35 @@ export default function SlotsPage() {
   async function updateCommission() {
     const { provider, program } = getProviderAndProgram();
     const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const transaction = new Transaction();    
+    const transaction = new Transaction();
 
     const mint = gameData.tokenMint;
-    
+
     const commissionTreasury = new PublicKey(commissionWallet);
-    if (
-      (await program.provider.connection.getBalance(commissionTreasury)) === 0
-    ) {
+    if ((await program.provider.connection.getBalance(commissionTreasury)) === 0) {
       transaction.add(
         SystemProgram.transfer({
           fromPubkey: program.provider.wallet.publicKey,
           toPubkey: commissionTreasury,
-          lamports:
-            await program.provider.connection.getMinimumBalanceForRentExemption(
-              0
-            ),
+          lamports: await program.provider.connection.getMinimumBalanceForRentExemption(0),
           programId: SystemProgram.programId,
         })
       );
     }
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
-    
-    const instruction = await getCreateAtaInstruction(
-      provider,
-      commissionTreasuryAta,
-      mint,
-      commissionTreasury
-    );
+
+    const instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
     if (instruction) transaction.add(instruction);
 
     transaction.add(
-      program.transaction.setCommission(
-        new PublicKey(commissionWallet),
-        commissionFee * 100,
-        {
-          accounts: {
-            payer: provider.wallet.publicKey,
-            game,
-          },
-        }
-      )
+      program.transaction.setRoyalty(new PublicKey(commissionWallet), commissionFee * 100, {
+        accounts: {
+          payer: provider.wallet.publicKey,
+          game,
+        },
+      })
     );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -486,15 +299,7 @@ export default function SlotsPage() {
     const transaction = new Transaction();
     transaction.add(
       program.transaction.setWinning(
-        winPercents.map(percents => {
-          const boundries = [...percents];
-          for (let i = 1; i >= 0; i--) {
-            boundries[i] += boundries[i + 1];
-          }
-          return boundries;
-        }),
-        new anchor.BN(jackpot * LAMPORTS_PER_SOL),
-        minRoundsBeforeWin,
+        winPercents.map((percent) => percent * 200),
         {
           accounts: {
             payer: provider.wallet.publicKey,
@@ -503,10 +308,7 @@ export default function SlotsPage() {
         }
       )
     );
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -527,10 +329,10 @@ export default function SlotsPage() {
         SystemProgram.transfer({
           fromPubkey: provider.wallet.publicKey,
           toPubkey: funderAta,
-          lamports: fundAmount * LAMPORTS_PER_SOL
+          lamports: fundAmount * LAMPORTS_PER_SOL,
         }),
         createSyncNativeInstruction(funderAta)
-      )
+      );
     }
     transaction.add(
       program.transaction.fund(new anchor.BN(LAMPORTS_PER_SOL * fundAmount), {
@@ -544,10 +346,7 @@ export default function SlotsPage() {
       })
     );
 
-    const txSignature = await wallet.sendTransaction(
-      transaction,
-      provider.connection
-    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
     await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
@@ -559,13 +358,17 @@ export default function SlotsPage() {
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
-      <div className="flex justify-center mt-[100px]">
-        <WalletMultiButton />
+      <div>
+        <Header />
+        <div className="flex justify-center">
+          <WalletMultiButton />
+        </div>
       </div>
     );
   }
   return (
     <div className="text-black flex gap-2 flex-col p-2">
+      <Header />
       <div className="flex justify-center">
         <WalletMultiButton />
       </div>
@@ -577,38 +380,16 @@ export default function SlotsPage() {
         </select>
       </div>
       <div>
-        Program ID:{" "}
-        <input
-          className="w-[450px] border-2 border-black p-2"
-          onChange={(e) => setProgramID(e.target.value)}
-          value={programID}
-        />
+        Program ID: <input className="w-[450px] border-2 border-black p-2" onChange={(e) => setProgramID(e.target.value)} value={programID} />
       </div>
       <div>
-        Game Name:{" "}
-        <input
-          className="border-2 border-black p-2"
-          onChange={(e) => setGamename(e.target.value)}
-          value={gamename}
-        />
+        Game Name: <input className="border-2 border-black p-2" onChange={(e) => setGamename(e.target.value)} value={gamename} />
       </div>
       <div>
-        <input
-          type="radio"
-          id="sol"
-          name="token_type"
-          checked={newTokenType === false}
-          onChange={() => setNewTokenType(false)}
-        />
+        <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
         <label htmlFor="sol">SOL</label>
         <br />
-        <input
-          type="radio"
-          id="skt"
-          name="token_type"
-          checked={newTokenType === true}
-          onChange={() => setNewTokenType(true)}
-        />
+        <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
         <label htmlFor="skt">$SKT</label>
         <br />
       </div>
@@ -640,159 +421,38 @@ export default function SlotsPage() {
         </div>
         {!!gameData && (
           <>
-            <button
-              className="border-2 border-black p-2"
-              onClick={updateCommission}
-            >
+            <button className="border-2 border-black p-2" onClick={updateCommission}>
               Update Commission
             </button>
           </>
         )}
       </div>
-      {newCommunityWallets.map((communityWallet, index) => (
-        <div className="flex gap-2 items-center" key={index}>
-          <div>
-            Community Wallet:{" "}
-            <input
-              className="w-[450px] border-2 border-black p-2"
-              onChange={(e) => {
-                const communityWallets = [...newCommunityWallets];
-                communityWallets[index] = e.target.value;
-                setNewCommunityWallets(communityWallets);
-              }}
-              disabled={communityWallets[index] === communityWallet}
-              value={newCommunityWallets[index]}
-            />
-          </div>
-          <div>
-            Royalty:{" "}
-            <input
-              className="border-2 border-black p-2"
-              type={"number"}
-              min={0}
-              max={100}
-              step={0.01}
-              onChange={(e) => {
-                const royalties = [...newRoyalties];
-                royalties[index] = parseFloat(e.target.value || "0");
-                setNewRoyalties(royalties);
-              }}
-              value={`${newRoyalties[index]}`}
-            />
-            %
-          </div>
-          {communityBalances.length > index && (
-            <div>
-              Balance: {communityBalances[index] / LAMPORTS_PER_SOL}{" "}
-              {tokenType ? "$SKT" : "SOL"}
-            </div>
-          )}
-
-          <button
-            className="border-2 border-black p-2"
-            onClick={() => updateCommunityWallet(index, false)}
-          >
-            {communityWallets[index] === communityWallet
-              ? "Update Royalty"
-              : "Add New"}
-          </button>
-          {communityWallets.length > 0 && (
-            <>
-              <button
-                className="border-2 border-black p-2"
-                onClick={() => {
-                  if (communityWallets[index] === communityWallet) {
-                    updateCommunityWallet(index, true);
-                  } else {
-                    const communityWallets = [...newCommunityWallets];
-                    communityWallets.splice(index, 1);
-                    setNewCommunityWallets(communityWallets);
-                  }
-                }}
-              >
-                Remove
-              </button>
-            </>
-          )}
-        </div>
-      ))}
-      <div>
-        <button
-          className="border-2 border-black p-2"
-          onClick={() => {
-            const communityWallets = [...newCommunityWallets];
-            communityWallets.push("");
-            setNewCommunityWallets(communityWallets);
-            const royalties = [...newRoyalties];
-            royalties.push(0);
-            setNewRoyalties(royalties);
-          }}
-        >
-          +
-        </button>
-      </div>
       {!!gameData && (
         <>
-          {winPercents.map((percents, row) => (
+          {winPercents.map((percent, row) => (
             <div className="flex gap-2 items-center" key={"row" + row}>
               <div className="w-[150px]">
                 Bet {prices[row]} {tokenType ? "$SKT" : "SOL"}:
               </div>
-              {percents.map((percent, index) => (
-                <div key={"col" + index}>
-                  {index + 3}:
-                  <input
-                    className="border-2 border-black p-2"
-                    type={"number"}
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    onChange={(e) => {
-                      const percents = [...winPercents];
-                      percents[row][index] =
-                        parseFloat(e.target.value || "0") * 100;
-                      setWinPercents(percents);
-                    }}
-                    value={`${percent / 100}`}
-                  />
-                  %
-                </div>
-              ))}
+
+              <div>
+                <input
+                  className="border-2 border-black p-2"
+                  type={"number"}
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  onChange={(e) => {
+                    const percents = [...winPercents];
+                    percents[row] = parseFloat(e.target.value || "0");
+                    setWinPercents(percents);
+                  }}
+                  value={`${percent}`}
+                />
+                %
+              </div>
             </div>
           ))}
-          <div className="flex gap-2 items-center">
-            <div>
-              Jackpot:
-              <input
-                className="border-2 border-black p-2"
-                type={"number"}
-                min={0}
-                max={100}
-                step={0.01}
-                onChange={(e) => {
-                  setJackpot(parseFloat(e.target.value || "0"));
-                }}
-                value={`${jackpot}`}
-              />
-              {tokenType ? "$SKT" : "SOL"}
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <div>
-              Min Rounds Before Win:
-              <input
-                className="border-2 border-black p-2"
-                type={"number"}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(e) => {
-                  setMinRoundsBeforeWin(parseInt(e.target.value || "0"));
-                }}
-                value={`${minRoundsBeforeWin}`}
-              />
-            </div>
-          </div>
           <div>
             <button className="border-2 border-black p-2" onClick={setWinning}>
               Set Winning
@@ -828,6 +488,18 @@ export default function SlotsPage() {
                 </option>
               ))}
             </select>
+
+            <select
+              className="border-2 border-black p-2"
+              value={betNumber}
+              onChange={(e) => {
+                setBetNumber(parseInt(e.target.value));
+              }}
+            >
+              <option value={0}>Head</option>
+              <option value={1}>Tail</option>
+            </select>
+
             <button className="border-2 border-black p-2" onClick={play}>
               Play
             </button>
@@ -882,14 +554,12 @@ export default function SlotsPage() {
       )}
       {!!playerData && (
         <div>
-          Player Balance: {playerBalance / LAMPORTS_PER_SOL}{" "}
-          {tokenType ? "$SKT" : "SOL"}
+          Player Balance: {playerBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
         </div>
       )}
       {!!gameData && (
         <div>
-          Main Balance: {gameBalance / LAMPORTS_PER_SOL}{" "}
-          {tokenType ? "$SKT" : "SOL"}
+          Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
         </div>
       )}
     </div>

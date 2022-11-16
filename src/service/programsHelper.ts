@@ -36,24 +36,20 @@ import { AnchorRaffleTicket } from "../idl/anchor_raffle_ticket";
 const idl_raffle = require('../idl/anchor_raffle_ticket.json');
 const programID = REACT_APP_RAFFLES_PROGRAM_ID;
 
-export function getProviderAndProgram(connection: Connection, anchorWallet: anchor.Wallet)
-{
+export function getProviderAndProgram(connection: Connection, anchorWallet: anchor.Wallet) {
     const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
     const program = new Program(idl_raffle, programID, provider) as Program<AnchorRaffleTicket>;
 
     return { provider, program };
 }
 
-export async function getRaffleAccount(rafflePubKey: PublicKey, connection: Connection, wallet: anchor.Wallet): Promise<TypeDef<{ name: "vault"; type: { kind: "struct"; fields: [{ name: "tokenType"; type: "publicKey" }, { name: "vaultBump"; type: "u8" }] } } | { name: "global"; type: { kind: "struct"; fields: [{ name: "authority"; type: "publicKey" }, { name: "authorizedAdmins"; type: { vec: "publicKey" } }] } } | { name: "raffle"; type: { kind: "struct"; fields: [{ name: "poolBump"; type: "u8" }, { name: "totalTickets"; type: "u32" }, { name: "soldTickets"; type: "u32" }, { name: "pricePerTicket"; type: "u64" }, { name: "tokenSplAddress"; type: "publicKey" }, { name: "owner"; type: "publicKey" }, { name: "nftMintAddress"; type: "publicKey" }, { name: "storeBuyers"; type: "bool" }, { name: "buyers"; type: { vec: { defined: "Buyer" } } }] } }, IdlTypes<AnchorRaffleTicket>> | null>
-{
+export async function getRaffleAccount(rafflePubKey: PublicKey, connection: Connection, wallet: anchor.Wallet): Promise<TypeDef<{ name: "vault"; type: { kind: "struct"; fields: [{ name: "tokenType"; type: "publicKey" }, { name: "vaultBump"; type: "u8" }] } } | { name: "global"; type: { kind: "struct"; fields: [{ name: "authority"; type: "publicKey" }, { name: "authorizedAdmins"; type: { vec: "publicKey" } }] } } | { name: "raffle"; type: { kind: "struct"; fields: [{ name: "poolBump"; type: "u8" }, { name: "totalTickets"; type: "u32" }, { name: "soldTickets"; type: "u32" }, { name: "pricePerTicket"; type: "u64" }, { name: "tokenSplAddress"; type: "publicKey" }, { name: "owner"; type: "publicKey" }, { name: "nftMintAddress"; type: "publicKey" }, { name: "storeBuyers"; type: "bool" }, { name: "buyers"; type: { vec: { defined: "Buyer" } } }] } }, IdlTypes<AnchorRaffleTicket>> | null> {
     const { program } = getProviderAndProgram(connection, wallet);
 
     const raffle = await program.account.raffle.fetchNullable(rafflePubKey);
 
-    try
-    {
-        if (raffle)
-        {
+    try {
+        if (raffle) {
             // @ts-ignore
             raffle.owner = raffle.owner.toString();
             // @ts-ignore
@@ -70,16 +66,14 @@ export async function getRaffleAccount(rafflePubKey: PublicKey, connection: Conn
             raffle.tokenSplAddressCurrencyType = SPLTOKENS_MAP_GET_TOKEN_NAME(raffle.tokenSplAddress.toString()).tokenName;
         }
     }
-    catch (error)
-    {
+    catch (error) {
         console.error(error);
     }
 
     return raffle;
 }
 
-export async function getAndPrintRaffleAccount(rafflePubKey: PublicKey, connection: Connection, wallet: anchor.Wallet, logTitle: string = ""): Promise<TypeDef<{ name: "vault"; type: { kind: "struct"; fields: [{ name: "tokenType"; type: "publicKey" }, { name: "vaultBump"; type: "u8" }] } } | { name: "global"; type: { kind: "struct"; fields: [{ name: "authority"; type: "publicKey" }, { name: "authorizedAdmins"; type: { vec: "publicKey" } }] } } | { name: "raffle"; type: { kind: "struct"; fields: [{ name: "poolBump"; type: "u8" }, { name: "totalTickets"; type: "u32" }, { name: "soldTickets"; type: "u32" }, { name: "pricePerTicket"; type: "u64" }, { name: "tokenSplAddress"; type: "publicKey" }, { name: "owner"; type: "publicKey" }, { name: "nftMintAddress"; type: "publicKey" }, { name: "storeBuyers"; type: "bool" }, { name: "buyers"; type: { vec: { defined: "Buyer" } } }] } }, IdlTypes<AnchorRaffleTicket>> | null>
-{
+export async function getAndPrintRaffleAccount(rafflePubKey: PublicKey, connection: Connection, wallet: anchor.Wallet, logTitle: string = ""): Promise<TypeDef<{ name: "vault"; type: { kind: "struct"; fields: [{ name: "tokenType"; type: "publicKey" }, { name: "vaultBump"; type: "u8" }] } } | { name: "global"; type: { kind: "struct"; fields: [{ name: "authority"; type: "publicKey" }, { name: "authorizedAdmins"; type: { vec: "publicKey" } }] } } | { name: "raffle"; type: { kind: "struct"; fields: [{ name: "poolBump"; type: "u8" }, { name: "totalTickets"; type: "u32" }, { name: "soldTickets"; type: "u32" }, { name: "pricePerTicket"; type: "u64" }, { name: "tokenSplAddress"; type: "publicKey" }, { name: "owner"; type: "publicKey" }, { name: "nftMintAddress"; type: "publicKey" }, { name: "storeBuyers"; type: "bool" }, { name: "buyers"; type: { vec: { defined: "Buyer" } } }] } }, IdlTypes<AnchorRaffleTicket>> | null> {
     const raffle = await getRaffleAccount(rafflePubKey, connection, wallet);
 
     const title = !logTitle ? "Raffle Details:" : logTitle;
@@ -96,13 +90,12 @@ export async function getAndPrintRaffleAccount(rafflePubKey: PublicKey, connecti
 /**
 Initialize a new raffle on chain
  */
-async function getCreateRaffleAccountTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction>
-{
+async function getCreateRaffleAccountTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction> {
     const { program } = getProviderAndProgram(initRaffleTransactionData.connection, initRaffleTransactionData.anchorWallet);
-    const { anchorWallet, raffleAddressKP, raffleTicketSupply, storeBuyers} = initRaffleTransactionData;
+    const { anchorWallet, raffleAddressKP, raffleTicketSupply, storeBuyers } = initRaffleTransactionData;
     const maxBuyers = storeBuyers ? raffleTicketSupply : 0;
 
-    {
+    // {
         // pub struct Raffle                        8: Discriminator
         // {
         //     pub pool_bump: u8,                   1
@@ -119,7 +112,7 @@ async function getCreateRaffleAccountTransaction(initRaffleTransactionData: init
         //     pub key: Pubkey,                     32
         //     pub tickets: u32,                    4
         // }
-    }
+    // }
 
 
     const space = (1 + 4 + 4 + 8 + 32 + 32 + 32 + 1 + ((32 + 4 + 8) * maxBuyers + 8)) + 8;
@@ -134,8 +127,7 @@ async function getCreateRaffleAccountTransaction(initRaffleTransactionData: init
     }));
 }
 
-export async function getRaffleFinalizeTransaction(raffleFinalizeDataType: raffleFinalizeDataType): Promise<Transaction>
-{
+export async function getRaffleFinalizeTransaction(raffleFinalizeDataType: raffleFinalizeDataType): Promise<Transaction> {
     const { program } = getProviderAndProgram(raffleFinalizeDataType.provider.connection, raffleFinalizeDataType.provider.wallet as anchor.Wallet);
     const connection = program.provider.connection;
     const raffleAddress = raffleFinalizeDataType.raffleAddress;
@@ -153,28 +145,28 @@ export async function getRaffleFinalizeTransaction(raffleFinalizeDataType: raffl
 
     // @ts-ignore
     const raffleBalance = raffleAccount!.soldTickets * raffleAccount!.pricePerTicketNum;
-    const raffleBankRoyalties = raffleBalance * raffleRoyalties/100;
+    const raffleBankRoyalties = raffleBalance * raffleRoyalties / 100;
     const raffleOwnerPrize = raffleBalance - raffleBankRoyalties;
 
     const cluster = IS_DEV_ENVIRONMENT ? "?cluster=devnet" : "";
     const nftMetaData = await getNftMetaData(nftMint, connection);
 
-    const options : any = { position: toast.POSITION.TOP_LEFT, className: 'raffle-finalize-toast-width',  autoClose: false };
+    const options: any = { position: toast.POSITION.TOP_LEFT, className: 'raffle-finalize-toast-width', autoClose: false };
     toast.error(``, options);
     toast.error(`NFT Win ${nftMetaData.name} ==> ${winner}`, options);
-    toast.error(`Raffle Owner Payout: ${raffleOwnerPrize.toFixed(4)} \$${raffleTokenName.tokenName} ==> ${owner}`, options);
-    toast.error(`Raffle Bank Royalties: ${raffleBankRoyalties.toFixed(4)} \$${raffleTokenName.tokenName} ==> ${raffleBank}`, options);
+    toast.error(`Raffle Owner Payout: ${raffleOwnerPrize.toFixed(4)} \\$${raffleTokenName.tokenName} ==> ${owner}`, options);
+    toast.error(`Raffle Bank Royalties: ${raffleBankRoyalties.toFixed(4)} \\$${raffleTokenName.tokenName} ==> ${raffleBank}`, options);
 
     console.log(`======= Raffle Finalize =======`);
     console.log(`NFT Mint: ${nftMint} | ${nftMetaData.name} \n --> https://solscan.io/token/${nftMint}${cluster}`);
     console.log(`NFT Winner Wallet: ${winner}`);
     console.log(`Raffle Owner Wallet: ${owner}`);
     console.log(`==============================`);
-    console.log(`Raffle Balance: ${raffleBalance.toFixed(2)} \$${raffleTokenName.tokenName}`);
+    console.log(`Raffle Balance: ${raffleBalance.toFixed(2)} \\$${raffleTokenName.tokenName}`);
     console.log(`Raffle Tickets Sold: ${raffleAccount!.soldTickets}/${raffleAccount!.totalTickets}`);
     console.log(`NFT Win ${nftMetaData.name} ==> ${winner}`);
-    console.log(`Raffle Owner Payout: ${raffleOwnerPrize.toFixed(4)} \$${raffleTokenName.tokenName} ==> ${owner}`);
-    console.log(`Raffle Bank Royalties: ${raffleBankRoyalties.toFixed(4)} \$${raffleTokenName.tokenName} ==> ${raffleBank}`);
+    console.log(`Raffle Owner Payout: ${raffleOwnerPrize.toFixed(4)} \\$${raffleTokenName.tokenName} ==> ${owner}`);
+    console.log(`Raffle Bank Royalties: ${raffleBankRoyalties.toFixed(4)} \\$${raffleTokenName.tokenName} ==> ${raffleBank}`);
     console.log("Approved?");
     console.log(`==============================`);
 
@@ -198,25 +190,24 @@ export async function getRaffleFinalizeTransaction(raffleFinalizeDataType: raffl
     transaction.add(t1.transaction);
     transaction.add(t2.transaction);
     transaction.add(program.transaction.raffleFinalize(raffleRoyalties,
-    {
-        accounts: {
-            raffleBank,
-            raffle: raffleAddress,
-            owner,
-            raffleNftAta,
-            winnerNftAta,
-            raffleSplAta,
-            ownerSplAta,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId
-        }
-    }));
+        {
+            accounts: {
+                raffleBank,
+                raffle: raffleAddress,
+                owner,
+                raffleNftAta,
+                winnerNftAta,
+                raffleSplAta,
+                ownerSplAta,
+                tokenProgram: TOKEN_PROGRAM_ID,
+                systemProgram: SystemProgram.programId
+            }
+        }));
 
     return transaction;
 }
 
-export async function getInitRaffleTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction>
-{
+export async function getInitRaffleTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction> {
     const { provider, program } = getProviderAndProgram(initRaffleTransactionData.connection, initRaffleTransactionData.anchorWallet);
     const connection = initRaffleTransactionData.connection;
     const anchorWallet = initRaffleTransactionData.anchorWallet;
@@ -227,7 +218,7 @@ export async function getInitRaffleTransaction(initRaffleTransactionData: initRa
     const amount = initRaffleTransactionData.raffleTicketSupply;
     const storeBuyers = initRaffleTransactionData.storeBuyers;
     const raffleType = initRaffleTransactionData.raffleType;
-    const transferNft = raffleType == eRaffleType.NFT;
+    const transferNft = raffleType === eRaffleType.NFT;
     const [global] = await PublicKey.findProgramAddress([Buffer.from(GLOBAL_ACCOUNT_SEED)], program.programId);
 
     console.log("Provider:", provider.connection);
@@ -248,23 +239,23 @@ export async function getInitRaffleTransaction(initRaffleTransactionData: initRa
 
     transaction.add(await getCreateRaffleAccountTransaction(initRaffleTransactionData));
     transaction.add(await program.transaction.initialize(tokenTypePubKey, priceBN, amount, storeBuyers, transferNft, raffleNftAddressPubKey,
-    {
-        accounts:
         {
-            // Global
-            global: global,
+            accounts:
+            {
+                // Global
+                global: global,
 
-            // Init Raffle
-            payer: anchorWallet.publicKey,
-            raffle: raffleAddressKP.publicKey,
-            systemProgram: SystemProgram.programId,
+                // Init Raffle
+                payer: anchorWallet.publicKey,
+                raffle: raffleAddressKP.publicKey,
+                systemProgram: SystemProgram.programId,
 
-            // Token Transfer
-            senderAta: sourceATA,
-            rafflePoolAta: recipientATA,
-            tokenProgram: TOKEN_PROGRAM_ID
-        },
-    }));
+                // Token Transfer
+                senderAta: sourceATA,
+                rafflePoolAta: recipientATA,
+                tokenProgram: TOKEN_PROGRAM_ID
+            },
+        }));
 
     // Sign transaction with raffleAddressKP
     transaction.feePayer = anchorWallet.publicKey;
@@ -274,8 +265,7 @@ export async function getInitRaffleTransaction(initRaffleTransactionData: initRa
     return transaction;
 }
 
-export async function getInitWithPDARaffleTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction>
-{
+export async function getInitWithPDARaffleTransaction(initRaffleTransactionData: initRaffleTransactionDataType): Promise<Transaction> {
     const { provider, program } = getProviderAndProgram(initRaffleTransactionData.connection, initRaffleTransactionData.anchorWallet);
 
     const connection = initRaffleTransactionData.connection;
@@ -345,8 +335,7 @@ export async function getInitWithPDARaffleTransaction(initRaffleTransactionData:
     return transaction;
 }
 
-export async function getBuyTicketTransactionBySOL(ticketTransactionData: raffleTransactionDataType): Promise<Transaction>
-{
+export async function getBuyTicketTransactionBySOL(ticketTransactionData: raffleTransactionDataType): Promise<Transaction> {
     const { program } = getProviderAndProgram(ticketTransactionData.connection, ticketTransactionData.wallet);
 
     const raffleAddress = ticketTransactionData.raffleAddress;
@@ -375,14 +364,13 @@ export async function getBuyTicketTransactionBySOL(ticketTransactionData: raffle
     return tx;
 }
 
-export async function getBuyTicketTransactionBySOLWithPDA(ticketTransactionData: raffleTransactionDataType): Promise<Transaction>
-{
+export async function getBuyTicketTransactionBySOLWithPDA(ticketTransactionData: raffleTransactionDataType): Promise<Transaction> {
     const { program } = getProviderAndProgram(ticketTransactionData.connection, ticketTransactionData.wallet);
 
     const raffleAddress = ticketTransactionData.raffleAddress;
     const rafflePrice = ticketTransactionData.raffleTicketPrice;
     const raffleTotalPrice = ticketTransactionData.ticketAmount * ticketTransactionData.raffleTicketPrice;
-    const raffleBank = ticketTransactionData.raffleBank;
+    // const raffleBank = ticketTransactionData.raffleBank;
     const ticketAmount = ticketTransactionData.ticketAmount;
     const ticketPriceLAMPORTS = new anchor.BN(rafflePrice * anchor.web3.LAMPORTS_PER_SOL); // use for constraint confirmation only
     const splTokenPublicKey = ticketTransactionData.splTokenPublicKey;
@@ -429,7 +417,7 @@ export async function getBuyTicketTransactionBySPL(ticketTransactionData: raffle
 
     console.log("SPL-Token: " + ticketTransactionData.currencyType + " | " + splTokenPublicKey.toString())
     console.log("Raffle :", raffleAddress.toString());
-    let raffleChainData = await getAndPrintRaffleAccount(raffleAddress, ticketTransactionData.connection, ticketTransactionData.wallet);
+    // let raffleChainData = await getAndPrintRaffleAccount(raffleAddress, ticketTransactionData.connection, ticketTransactionData.wallet);
 
     const sourceATA = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, splTokenPublicKey, sourcePublicKey);
     let recipientATA = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, splTokenPublicKey, destPublicKey);
@@ -501,7 +489,7 @@ export async function getBuyTicketTransactionBySPLWithPDA(ticketTransactionData:
 
     console.log("SPL-Token: " + ticketTransactionData.currencyType + " | " + splTokenPublicKey.toString())
     console.log("Raffle :", raffleAddress.toString());
-    let raffleChainData = await getAndPrintRaffleAccount(raffleAddress, ticketTransactionData.connection, ticketTransactionData.wallet);
+    // let raffleChainData = await getAndPrintRaffleAccount(raffleAddress, ticketTransactionData.connection, ticketTransactionData.wallet);
 
     const sourceATA = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, splTokenPublicKey, sourcePublicKey);
     let recipientATA = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, splTokenPublicKey, destPublicKey, true);
@@ -595,24 +583,20 @@ export async function getTransferSPLTokenTransaction(ticketTransactionData: tran
     return transaction;
 }
 
-export async function convertKCtoSKTWithBackend(connection: Connection, wallet: WalletContextState, serializedTx: string, userCoinsToConvert: number, onSuccessCallback: any)
-{
+export async function convertKCtoSKTWithBackend(connection: Connection, wallet: WalletContextState, serializedTx: string, userCoinsToConvert: number, onSuccessCallback: any) {
     const { program } = getProviderAndProgram(connection, wallet as any as anchor.Wallet);
     const recoveredTx = Transaction.from(Buffer.from(serializedTx, "base64"));
 
     const txSignature = await wallet.sendTransaction(recoveredTx, program.provider.connection);
-    toast.info(`Converting ${userCoinsToConvert} KC to $SKT in progress...`, {autoClose: 50000});
+    toast.info(`Converting ${userCoinsToConvert} KC to $SKT in progress...`, { autoClose: 50000 });
 
     let retries = 5;
-    while (retries > 0)
-    {
-        try
-        {
+    while (retries > 0) {
+        try {
             await program.provider.connection.confirmTransaction(txSignature, "confirmed");
             retries = -1;
         }
-        catch (e)
-        {
+        catch (e) {
             console.warn(e);
             console.log("Retrying again... left:", retries)
             retries--;
@@ -630,7 +614,7 @@ export async function convertKCtoSKTWithBackend(connection: Connection, wallet: 
 export async function getConvertSktSolTransaction(ticketTransactionData: vaultTrancationDataType): Promise<Transaction> {
     const { program } = getProviderAndProgram(ticketTransactionData.connection, ticketTransactionData.wallet);
 
-    const connection = ticketTransactionData.connection;
+    // const connection = ticketTransactionData.connection;
     const claimer = ticketTransactionData.wallet.publicKey;
     const claimerSktAccount = ticketTransactionData.claimerAta;
     const sktMint = ticketTransactionData.sktMint;
