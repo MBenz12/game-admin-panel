@@ -83,6 +83,13 @@ export default function Rust() {
     console.log(connection);
   }, [network]);
 
+  useEffect(() => {
+    const network = localStorage.getItem("network");
+    if (network) {
+      setNetwork(network as WalletAdapterNetwork);
+    }
+  }, []);
+
   const sleep = (milliseconds: number) => {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
   };
@@ -1487,7 +1494,14 @@ export default function Rust() {
         {
           <>
             NETWORK:
-            <select className="border-2 border-black p-2" onChange={(e) => setNetwork(e.target.value as Cluster)} value={network}>
+            <select
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setNetwork(e.target.value as WalletAdapterNetwork);
+                localStorage.setItem("network", e.target.value);
+              }}
+              value={network}
+            >
               <option value="mainnet-beta">Mainnet</option>
               <option value="devnet">Devnet</option>
             </select>

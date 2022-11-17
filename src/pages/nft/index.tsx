@@ -9,6 +9,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SYSVAR_RENT_PUBKEY, Transaction } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import Header from "components/Header";
+import StorageSelect from "components/SotrageSelect";
 import { NFT_VAULT_POOL_SEED } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction } from "config/utils";
 import { MintMachine } from "idl/mint_machine";
@@ -22,6 +23,10 @@ const MINT_SIZE = MintLayout.span;
 
 const mode1Default = "DFsK8SCKGDwwuGJxiA6q9vNhpxBuJhWb6iZbGcLqttEu";
 const mode2Default = "ERRbgy1zePa3kYs2xfjXo457p54hFPEZ1Rm37UdSJCcr"; //"H72H4tF6kRhSP8SUzoRDeivXz3255TDnAMvnG66cALHY";
+
+const defaultProgramIDs = [
+  idl_mint_machine.metadata.address
+];
 
 export default function MyNftMachine() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
@@ -45,6 +50,13 @@ export default function MyNftMachine() {
     "9ieLlJwgOqqvwHfetmQXsI09NYjnzWIa3_8wLr7yWXo",
     "1AaqGxO2fq1H7oDWDaNdpcNCZTUO_4JNK6oQoJ6sPS0",
   ]);
+
+  useEffect(() => {
+    const network = localStorage.getItem("network");
+    if (network) {
+      setNetwork(network as WalletAdapterNetwork);
+    }
+  }, []);
 
   function getProviderAndProgram() {
     const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
@@ -419,13 +431,20 @@ export default function MyNftMachine() {
           </div>
           <div className="flex items-center justify-center">
             NETWORK:``
-            <select className="border-2 border-black p-2" onChange={(e) => setNetwork(e.target.value as WalletAdapterNetwork)} value={network}>
+            <select
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setNetwork(e.target.value as WalletAdapterNetwork);
+                localStorage.setItem("network", e.target.value);
+              }}
+              value={network}
+            >
               <option value={WalletAdapterNetwork.Mainnet}>Mainnet</option>
               <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
             </select>
           </div>
           <div className="flex items-center justify-center">
-            Program ID: <input className="w-[450px] border-2 border-black p-2" onChange={(e) => setProgramID(e.target.value)} value={programID} />
+            <StorageSelect itemkey="nft-program" label="Program ID" defaultItems={defaultProgramIDs} defaultItem={programID} setItem={setProgramID} />
           </div>
           <div className="flex items-center justify-center">
             Total Supply: <input className="border-2 border-black p-2" onChange={(e) => setTotalSupply(parseInt(e.target.value))} value={totalSupply} />

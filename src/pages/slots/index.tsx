@@ -7,12 +7,19 @@ import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
 import Header from "components/Header";
+import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, SPLTOKENS_MAP } from "config/constants";
 import { Slots } from "idl/slots";
 import { useEffect, useMemo, useState } from "react";
 import { convertLog, default_commission, default_community, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress, isAdmin } from "./utils";
 const idl_slots = require("idl/slots.json");
 
+const deafultProgramIDs = [
+  idl_slots.metadata.address
+];
+const deafultGamenames = [
+  game_name
+];
 export default function SlotsPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
@@ -62,6 +69,13 @@ export default function SlotsPage() {
 
   const [newRoyalties, setNewRoyalties] = useState<Array<number>>([5]);
   const [gamename, setGamename] = useState(game_name);
+
+  useEffect(() => {
+    const network = localStorage.getItem("network");
+    if (network) {
+      setNetwork(network as WalletAdapterNetwork);
+    }
+  }, []);
 
   async function initGame() {
     const { provider, program } = getProviderAndProgram();
@@ -464,17 +478,20 @@ export default function SlotsPage() {
       </div>
       <div className="flex items-center">
         NETWORK:
-        <select className="border-2 border-black p-2" onChange={(e) => setNetwork(e.target.value as WalletAdapterNetwork)} value={network}>
+        <select
+          className="border-2 border-black p-2"
+          onChange={(e) => {
+            setNetwork(e.target.value as WalletAdapterNetwork);
+            localStorage.setItem("network", e.target.value);
+          }}
+          value={network}
+        >
           <option value={WalletAdapterNetwork.Mainnet}>Mainnet</option>
           <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
         </select>
       </div>
-      <div>
-        Program ID: <input className="w-[450px] border-2 border-black p-2" onChange={(e) => setProgramID(e.target.value)} value={programID} />
-      </div>
-      <div>
-        Game Name: <input className="border-2 border-black p-2" onChange={(e) => setGamename(e.target.value)} value={gamename} />
-      </div>
+      <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />      
+      <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />    
       <div>
         <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
         <label htmlFor="sol">SOL</label>
