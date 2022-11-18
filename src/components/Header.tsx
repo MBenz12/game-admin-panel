@@ -3,16 +3,16 @@ export default function Header() {
     <div className="py-6 flex justify-center w-full bg-[#1D1326]">
       <ul className="flex gap-5">
         <li>
-          <a className="text-white" href="/rust">rust</a>
+          <a className="text-white" href="/rust">Rust</a>
         </li>
         <li>
-          <a className="text-white" href="/nft">nft</a>
+          <a className="text-white" href="/nft">Nft</a>
         </li>
         <li>
-          <a className="text-white" href="/slots">slots</a>
+          <a className="text-white" href="/slots">Slots</a>
         </li>
         <li>
-          <a className="text-white" href="/coinflip">coinflip</a>
+          <a className="text-white" href="/coinflip">Coinflip</a>
         </li>
       </ul>
     </div>

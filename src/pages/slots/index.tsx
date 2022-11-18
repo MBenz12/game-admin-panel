@@ -467,7 +467,7 @@ export default function SlotsPage() {
     );
   }
   return (
-    <div className="text-black flex gap-2 flex-col relative">
+    <div className="text-black relative flex gap-2 flex-col ">
       <Header />
       <div className="absolute right-5 top-2">
         <WalletMultiButton />
@@ -477,7 +477,7 @@ export default function SlotsPage() {
         <select
           className="border-2 border-black p-2"
           onChange={(e) => {
-            setNetwork(e.target.value as WalletAdapterNetwork)
+            setNetwork(e.target.value as WalletAdapterNetwork);
             localStorage.setItem("network", e.target.value);
           }}
           value={network}
@@ -486,67 +486,30 @@ export default function SlotsPage() {
           <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
         </select>
       </div>
-      <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
-      <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
-      <div>
-        <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
-        <label htmlFor="sol">SOL</label>
-        <br />
-        <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
-        <label htmlFor="skt">$SKT</label>
-        <br />
-      </div>
-      <div className="flex gap-2 items-center">
+      <div className="ml-5 flex gap-2 flex-col ">
+        <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
+        <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
         <div>
-          Commission Wallet:{" "}
-          <input
-            className="w-[450px] border-2 border-black p-2"
-            onChange={(e) => {
-              setCommissionWallet(e.target.value);
-            }}
-            value={commissionWallet}
-          />
+          <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
+          <label htmlFor="sol">SOL</label>
+          <br />
+          <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
+          <label htmlFor="skt">$SKT</label>
+          <br />
         </div>
-        <div>
-          Commission Fee:{" "}
-          <input
-            className="border-2 border-black p-2"
-            type={"number"}
-            min={0}
-            max={100}
-            step={0.01}
-            onChange={(e) => {
-              setCommissionFee(parseFloat(e.target.value || "0"));
-            }}
-            value={`${commissionFee}`}
-          />
-          %
-        </div>
-        {!!gameData && (
-          <>
-            <button className="border-2 border-black p-2" onClick={updateCommission}>
-              Update Commission
-            </button>
-          </>
-        )}
-      </div>
-      {newCommunityWallets.map((communityWallet, index) => (
-        <div className="flex gap-2 items-center" key={index}>
+        <div className="flex gap-2 items-center">
           <div>
-            Community Wallet:{" "}
+            Commission Wallet:{" "}
             <input
               className="w-[450px] border-2 border-black p-2"
               onChange={(e) => {
-                const communityWallets = [...newCommunityWallets];
-                communityWallets[index] = e.target.value;
-                setNewCommunityWallets(communityWallets);
+                setCommissionWallet(e.target.value);
               }}
-              disabled={communityWallets[index] === communityWallet}
-              value={newCommunityWallets[index]}
+              value={commissionWallet}
             />
           </div>
           <div>
-            Royalty:{" "}
+            Commission Fee:{" "}
             <input
               className="border-2 border-black p-2"
               type={"number"}
@@ -554,89 +517,37 @@ export default function SlotsPage() {
               max={100}
               step={0.01}
               onChange={(e) => {
-                const royalties = [...newRoyalties];
-                royalties[index] = parseFloat(e.target.value || "0");
-                setNewRoyalties(royalties);
+                setCommissionFee(parseFloat(e.target.value || "0"));
               }}
-              value={`${newRoyalties[index]}`}
+              value={`${commissionFee}`}
             />
             %
           </div>
-          {communityBalances.length > index && (
-            <div>
-              Balance: {communityBalances[index] / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
-            </div>
-          )}
-
-          <button className="border-2 border-black p-2" onClick={() => updateCommunityWallet(index, false)}>
-            {communityWallets[index] === communityWallet ? "Update Royalty" : "Add New"}
-          </button>
-          {communityWallets.length > 0 && (
+          {!!gameData && (
             <>
-              <button
-                className="border-2 border-black p-2"
-                onClick={() => {
-                  if (communityWallets[index] === communityWallet) {
-                    updateCommunityWallet(index, true);
-                  } else {
-                    const communityWallets = [...newCommunityWallets];
-                    communityWallets.splice(index, 1);
-                    setNewCommunityWallets(communityWallets);
-                  }
-                }}
-              >
-                Remove
+              <button className="border-2 border-black p-2" onClick={updateCommission}>
+                Update Commission
               </button>
             </>
           )}
         </div>
-      ))}
-      <div>
-        <button
-          className="border-2 border-black p-2"
-          onClick={() => {
-            const communityWallets = [...newCommunityWallets];
-            communityWallets.push("");
-            setNewCommunityWallets(communityWallets);
-            const royalties = [...newRoyalties];
-            royalties.push(0);
-            setNewRoyalties(royalties);
-          }}
-        >
-          +
-        </button>
-      </div>
-      {!!gameData && (
-        <>
-          {winPercents.map((percents, row) => (
-            <div className="flex gap-2 items-center" key={"row" + row}>
-              <div className="w-[150px]">
-                Bet {prices[row]} {tokenType ? "$SKT" : "SOL"}:
-              </div>
-              {percents.map((percent, index) => (
-                <div key={"col" + index}>
-                  {index + 3}:
-                  <input
-                    className="border-2 border-black p-2"
-                    type={"number"}
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    onChange={(e) => {
-                      const percents = [...winPercents];
-                      percents[row][index] = parseFloat(e.target.value || "0") * 100;
-                      setWinPercents(percents);
-                    }}
-                    value={`${percent / 100}`}
-                  />
-                  %
-                </div>
-              ))}
-            </div>
-          ))}
-          <div className="flex gap-2 items-center">
+        {newCommunityWallets.map((communityWallet, index) => (
+          <div className="flex gap-2 items-center" key={index}>
             <div>
-              Jackpot:
+              Community Wallet:{" "}
+              <input
+                className="w-[450px] border-2 border-black p-2"
+                onChange={(e) => {
+                  const communityWallets = [...newCommunityWallets];
+                  communityWallets[index] = e.target.value;
+                  setNewCommunityWallets(communityWallets);
+                }}
+                disabled={communityWallets[index] === communityWallet}
+                value={newCommunityWallets[index]}
+              />
+            </div>
+            <div>
+              Royalty:{" "}
               <input
                 className="border-2 border-black p-2"
                 type={"number"}
@@ -644,126 +555,217 @@ export default function SlotsPage() {
                 max={100}
                 step={0.01}
                 onChange={(e) => {
-                  setJackpot(parseFloat(e.target.value || "0"));
+                  const royalties = [...newRoyalties];
+                  royalties[index] = parseFloat(e.target.value || "0");
+                  setNewRoyalties(royalties);
                 }}
-                value={`${jackpot}`}
+                value={`${newRoyalties[index]}`}
               />
-              {tokenType ? "$SKT" : "SOL"}
+              %
             </div>
+            {communityBalances.length > index && (
+              <div>
+                Balance: {communityBalances[index] / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+              </div>
+            )}
+
+            <button className="border-2 border-black p-2" onClick={() => updateCommunityWallet(index, false)}>
+              {communityWallets[index] === communityWallet ? "Update Royalty" : "Add New"}
+            </button>
+            {communityWallets.length > 0 && (
+              <>
+                <button
+                  className="border-2 border-black p-2"
+                  onClick={() => {
+                    if (communityWallets[index] === communityWallet) {
+                      updateCommunityWallet(index, true);
+                    } else {
+                      const communityWallets = [...newCommunityWallets];
+                      communityWallets.splice(index, 1);
+                      setNewCommunityWallets(communityWallets);
+                    }
+                  }}
+                >
+                  Remove
+                </button>
+              </>
+            )}
           </div>
-          <div className="flex gap-2 items-center">
+        ))}
+        <div>
+          <button
+            className="border-2 border-black p-2"
+            onClick={() => {
+              const communityWallets = [...newCommunityWallets];
+              communityWallets.push("");
+              setNewCommunityWallets(communityWallets);
+              const royalties = [...newRoyalties];
+              royalties.push(0);
+              setNewRoyalties(royalties);
+            }}
+          >
+            +
+          </button>
+        </div>
+        {!!gameData && (
+          <>
+            {winPercents.map((percents, row) => (
+              <div className="flex gap-2 items-center" key={"row" + row}>
+                <div className="w-[150px]">
+                  Bet {prices[row]} {tokenType ? "$SKT" : "SOL"}:
+                </div>
+                {percents.map((percent, index) => (
+                  <div key={"col" + index}>
+                    {index + 3}:
+                    <input
+                      className="border-2 border-black p-2"
+                      type={"number"}
+                      min={0}
+                      max={100}
+                      step={0.01}
+                      onChange={(e) => {
+                        const percents = [...winPercents];
+                        percents[row][index] = parseFloat(e.target.value || "0") * 100;
+                        setWinPercents(percents);
+                      }}
+                      value={`${percent / 100}`}
+                    />
+                    %
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="flex gap-2 items-center">
+              <div>
+                Jackpot:
+                <input
+                  className="border-2 border-black p-2"
+                  type={"number"}
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  onChange={(e) => {
+                    setJackpot(parseFloat(e.target.value || "0"));
+                  }}
+                  value={`${jackpot}`}
+                />
+                {tokenType ? "$SKT" : "SOL"}
+              </div>
+            </div>
+            <div className="flex gap-2 items-center">
+              <div>
+                Min Rounds Before Win:
+                <input
+                  className="border-2 border-black p-2"
+                  type={"number"}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={(e) => {
+                    setMinRoundsBeforeWin(parseInt(e.target.value || "0"));
+                  }}
+                  value={`${minRoundsBeforeWin}`}
+                />
+              </div>
+            </div>
             <div>
-              Min Rounds Before Win:
+              <button className="border-2 border-black p-2" onClick={setWinning}>
+                Set Winning
+              </button>
+            </div>
+          </>
+        )}
+        <div className="flex gap-2">
+          {!gameData && (
+            <button className="border-2 border-black p-2" onClick={initGame}>
+              Init Game
+            </button>
+          )}
+          {!!gameData && !playerData && (
+            <button className="border-2 border-black p-2" onClick={addPlayer}>
+              Add Player
+            </button>
+          )}
+          {!!playerData && (
+            <>
+              <select
+                className="border-2 border-black p-2"
+                value={price}
+                onChange={(e) => {
+                  let index = parseFloat(e.target.value);
+                  setBetNo(index);
+                  setPrice(prices[index]);
+                }}
+              >
+                {prices.map((value, index) => (
+                  <option value={index} key={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+              <button className="border-2 border-black p-2" onClick={play}>
+                Play
+              </button>
+
+              <button className="border-2 border-black p-2" onClick={claim}>
+                Withdraw Player Balance
+              </button>
+            </>
+          )}
+        </div>
+        {!!gameData && (
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              Fund Amount:
               <input
                 className="border-2 border-black p-2"
                 type={"number"}
                 min={0}
-                max={100}
-                step={1}
+                step={0.01}
                 onChange={(e) => {
-                  setMinRoundsBeforeWin(parseInt(e.target.value || "0"));
+                  setFundAmount(parseFloat(e.target.value || "0"));
                 }}
-                value={`${minRoundsBeforeWin}`}
+                value={`${fundAmount}`}
               />
+              {tokenType ? "$SKT" : "SOL"}
             </div>
-          </div>
-          <div>
-            <button className="border-2 border-black p-2" onClick={setWinning}>
-              Set Winning
+            <button className="border-2 border-black p-2" onClick={fund}>
+              Fund
             </button>
           </div>
-        </>
-      )}
-      <div className="flex gap-2">
-        {!gameData && (
-          <button className="border-2 border-black p-2" onClick={initGame}>
-            Init Game
-          </button>
         )}
-        {!!gameData && !playerData && (
-          <button className="border-2 border-black p-2" onClick={addPlayer}>
-            Add Player
-          </button>
+        {!!gameData && (
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              Withdraw Amount:
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setWithdrawAmount(parseFloat(e.target.value || "0"));
+                }}
+                value={`${withdrawAmount}`}
+              />
+              {tokenType ? "$SKT" : "SOL"}
+            </div>
+            <button className="border-2 border-black p-2" onClick={withdraw}>
+              Withdraw Main Balance
+            </button>
+          </div>
         )}
         {!!playerData && (
-          <>
-            <select
-              className="border-2 border-black p-2"
-              value={price}
-              onChange={(e) => {
-                let index = parseFloat(e.target.value);
-                setBetNo(index);
-                setPrice(prices[index]);
-              }}
-            >
-              {prices.map((value, index) => (
-                <option value={index} key={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            <button className="border-2 border-black p-2" onClick={play}>
-              Play
-            </button>
-
-            <button className="border-2 border-black p-2" onClick={claim}>
-              Withdraw Player Balance
-            </button>
-          </>
+          <div>
+            Player Balance: {playerBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+          </div>
+        )}
+        {!!gameData && (
+          <div>
+            Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+          </div>
         )}
       </div>
-      {!!gameData && (
-        <div className="flex gap-2">
-          <div className="flex gap-1 items-center">
-            Fund Amount:
-            <input
-              className="border-2 border-black p-2"
-              type={"number"}
-              min={0}
-              step={0.01}
-              onChange={(e) => {
-                setFundAmount(parseFloat(e.target.value || "0"));
-              }}
-              value={`${fundAmount}`}
-            />
-            {tokenType ? "$SKT" : "SOL"}
-          </div>
-          <button className="border-2 border-black p-2" onClick={fund}>
-            Fund
-          </button>
-        </div>
-      )}
-      {!!gameData && (
-        <div className="flex gap-2">
-          <div className="flex gap-1 items-center">
-            Withdraw Amount:
-            <input
-              className="border-2 border-black p-2"
-              type={"number"}
-              min={0}
-              step={0.01}
-              onChange={(e) => {
-                setWithdrawAmount(parseFloat(e.target.value || "0"));
-              }}
-              value={`${withdrawAmount}`}
-            />
-            {tokenType ? "$SKT" : "SOL"}
-          </div>
-          <button className="border-2 border-black p-2" onClick={withdraw}>
-            Withdraw Main Balance
-          </button>
-        </div>
-      )}
-      {!!playerData && (
-        <div>
-          Player Balance: {playerBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
-        </div>
-      )}
-      {!!gameData && (
-        <div>
-          Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
-        </div>
-      )}
     </div>
   );
 }

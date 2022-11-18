@@ -14,12 +14,8 @@ import { useEffect, useMemo, useState } from "react";
 import { convertLog, default_commission, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress, isAdmin } from "./utils";
 
 const idl_coinflip = require("idl/coinflip.json");
-const deafultProgramIDs = [
-  idl_coinflip.metadata.address
-];
-const deafultGamenames = [
-  game_name
-];
+const deafultProgramIDs = [idl_coinflip.metadata.address];
+const deafultGamenames = [game_name];
 
 export default function CoinflipPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
@@ -398,185 +394,187 @@ export default function CoinflipPage() {
           <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
         </select>
       </div>
-      <StorageSelect itemkey="coinflip-programId" label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
-      <StorageSelect itemkey="coinflip-gamename" label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
-      <div>
-        <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
-        <label htmlFor="sol">SOL</label>
-        <br />
-        <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
-        <label htmlFor="skt">$SKT</label>
-        <br />
-      </div>
-      <div className="flex gap-2 items-center">
+      <div className="ml-5 flex gap-2 flex-col ">
+        <StorageSelect itemkey="coinflip-programId" label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
+        <StorageSelect itemkey="coinflip-gamename" label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
         <div>
-          Commission Wallet:{" "}
-          <input
-            className="w-[450px] border-2 border-black p-2"
-            onChange={(e) => {
-              setCommissionWallet(e.target.value);
-            }}
-            value={commissionWallet}
-          />
+          <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
+          <label htmlFor="sol">SOL</label>
+          <br />
+          <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
+          <label htmlFor="skt">$SKT</label>
+          <br />
         </div>
-        <div>
-          Commission Fee:{" "}
-          <input
-            className="border-2 border-black p-2"
-            type={"number"}
-            min={0}
-            max={100}
-            step={0.01}
-            onChange={(e) => {
-              setCommissionFee(parseFloat(e.target.value || "0"));
-            }}
-            value={`${commissionFee}`}
-          />
-          %
+        <div className="flex gap-2 items-center">
+          <div>
+            Commission Wallet:{" "}
+            <input
+              className="w-[450px] border-2 border-black p-2"
+              onChange={(e) => {
+                setCommissionWallet(e.target.value);
+              }}
+              value={commissionWallet}
+            />
+          </div>
+          <div>
+            Commission Fee:{" "}
+            <input
+              className="border-2 border-black p-2"
+              type={"number"}
+              min={0}
+              max={100}
+              step={0.01}
+              onChange={(e) => {
+                setCommissionFee(parseFloat(e.target.value || "0"));
+              }}
+              value={`${commissionFee}`}
+            />
+            %
+          </div>
+          {!!gameData && (
+            <>
+              <button className="border-2 border-black p-2" onClick={updateCommission}>
+                Update Commission
+              </button>
+            </>
+          )}
         </div>
         {!!gameData && (
           <>
-            <button className="border-2 border-black p-2" onClick={updateCommission}>
-              Update Commission
-            </button>
+            {winPercents.map((percent, row) => (
+              <div className="flex gap-2 items-center" key={"row" + row}>
+                <div className="w-[150px]">
+                  Bet {prices[row]} {tokenType ? "$SKT" : "SOL"}:
+                </div>
+
+                <div>
+                  <input
+                    className="border-2 border-black p-2"
+                    type={"number"}
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    onChange={(e) => {
+                      const percents = [...winPercents];
+                      percents[row] = parseFloat(e.target.value || "0");
+                      setWinPercents(percents);
+                    }}
+                    value={`${percent}`}
+                  />
+                  %
+                </div>
+              </div>
+            ))}
+            <div>
+              <button className="border-2 border-black p-2" onClick={setWinning}>
+                Set Winning
+              </button>
+            </div>
           </>
         )}
-      </div>
-      {!!gameData && (
-        <>
-          {winPercents.map((percent, row) => (
-            <div className="flex gap-2 items-center" key={"row" + row}>
-              <div className="w-[150px]">
-                Bet {prices[row]} {tokenType ? "$SKT" : "SOL"}:
-              </div>
+        <div className="flex gap-2">
+          {!gameData && (
+            <button className="border-2 border-black p-2" onClick={initGame}>
+              Init Game
+            </button>
+          )}
+          {!!gameData && !playerData && (
+            <button className="border-2 border-black p-2" onClick={addPlayer}>
+              Add Player
+            </button>
+          )}
+          {!!playerData && (
+            <>
+              <select
+                className="border-2 border-black p-2"
+                value={price}
+                onChange={(e) => {
+                  let index = parseFloat(e.target.value);
+                  setBetNo(index);
+                  setPrice(prices[index]);
+                }}
+              >
+                {prices.map((value, index) => (
+                  <option value={index} key={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
 
-              <div>
-                <input
-                  className="border-2 border-black p-2"
-                  type={"number"}
-                  min={0}
-                  max={100}
-                  step={0.01}
-                  onChange={(e) => {
-                    const percents = [...winPercents];
-                    percents[row] = parseFloat(e.target.value || "0");
-                    setWinPercents(percents);
-                  }}
-                  value={`${percent}`}
-                />
-                %
-              </div>
+              <select
+                className="border-2 border-black p-2"
+                value={betNumber}
+                onChange={(e) => {
+                  setBetNumber(parseInt(e.target.value));
+                }}
+              >
+                <option value={0}>Head</option>
+                <option value={1}>Tail</option>
+              </select>
+
+              <button className="border-2 border-black p-2" onClick={play}>
+                Play
+              </button>
+
+              <button className="border-2 border-black p-2" onClick={claim}>
+                Withdraw Player Balance
+              </button>
+            </>
+          )}
+        </div>
+        {!!gameData && (
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              Fund Amount:
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setFundAmount(parseFloat(e.target.value || "0"));
+                }}
+                value={`${fundAmount}`}
+              />
+              {tokenType ? "$SKT" : "SOL"}
             </div>
-          ))}
-          <div>
-            <button className="border-2 border-black p-2" onClick={setWinning}>
-              Set Winning
+            <button className="border-2 border-black p-2" onClick={fund}>
+              Fund
             </button>
           </div>
-        </>
-      )}
-      <div className="flex gap-2">
-        {!gameData && (
-          <button className="border-2 border-black p-2" onClick={initGame}>
-            Init Game
-          </button>
         )}
-        {!!gameData && !playerData && (
-          <button className="border-2 border-black p-2" onClick={addPlayer}>
-            Add Player
-          </button>
+        {!!gameData && (
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              Withdraw Amount:
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setWithdrawAmount(parseFloat(e.target.value || "0"));
+                }}
+                value={`${withdrawAmount}`}
+              />
+              {tokenType ? "$SKT" : "SOL"}
+            </div>
+            <button className="border-2 border-black p-2" onClick={withdraw}>
+              Withdraw Main Balance
+            </button>
+          </div>
         )}
         {!!playerData && (
-          <>
-            <select
-              className="border-2 border-black p-2"
-              value={price}
-              onChange={(e) => {
-                let index = parseFloat(e.target.value);
-                setBetNo(index);
-                setPrice(prices[index]);
-              }}
-            >
-              {prices.map((value, index) => (
-                <option value={index} key={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="border-2 border-black p-2"
-              value={betNumber}
-              onChange={(e) => {
-                setBetNumber(parseInt(e.target.value));
-              }}
-            >
-              <option value={0}>Head</option>
-              <option value={1}>Tail</option>
-            </select>
-
-            <button className="border-2 border-black p-2" onClick={play}>
-              Play
-            </button>
-
-            <button className="border-2 border-black p-2" onClick={claim}>
-              Withdraw Player Balance
-            </button>
-          </>
+          <div>
+            Player Balance: {playerBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+          </div>
+        )}
+        {!!gameData && (
+          <div>
+            Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+          </div>
         )}
       </div>
-      {!!gameData && (
-        <div className="flex gap-2">
-          <div className="flex gap-1 items-center">
-            Fund Amount:
-            <input
-              className="border-2 border-black p-2"
-              type={"number"}
-              min={0}
-              step={0.01}
-              onChange={(e) => {
-                setFundAmount(parseFloat(e.target.value || "0"));
-              }}
-              value={`${fundAmount}`}
-            />
-            {tokenType ? "$SKT" : "SOL"}
-          </div>
-          <button className="border-2 border-black p-2" onClick={fund}>
-            Fund
-          </button>
-        </div>
-      )}
-      {!!gameData && (
-        <div className="flex gap-2">
-          <div className="flex gap-1 items-center">
-            Withdraw Amount:
-            <input
-              className="border-2 border-black p-2"
-              type={"number"}
-              min={0}
-              step={0.01}
-              onChange={(e) => {
-                setWithdrawAmount(parseFloat(e.target.value || "0"));
-              }}
-              value={`${withdrawAmount}`}
-            />
-            {tokenType ? "$SKT" : "SOL"}
-          </div>
-          <button className="border-2 border-black p-2" onClick={withdraw}>
-            Withdraw Main Balance
-          </button>
-        </div>
-      )}
-      {!!playerData && (
-        <div>
-          Player Balance: {playerBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
-        </div>
-      )}
-      {!!gameData && (
-        <div>
-          Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
-        </div>
-      )}
     </div>
   );
 }
