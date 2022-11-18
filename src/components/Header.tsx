@@ -1,18 +1,18 @@
 export default function Header() {
   return (
-    <div className="py-5 flex justify-center">
+    <div className="py-6 flex justify-center w-full bg-[#1D1326]">
       <ul className="flex gap-5">
         <li>
-          <a href="/rust">rust</a>
+          <a className="text-white" href="/rust">rust</a>
         </li>
         <li>
-          <a href="/nft">nft</a>
+          <a className="text-white" href="/nft">nft</a>
         </li>
         <li>
-          <a href="/slots">slots</a>
+          <a className="text-white" href="/slots">slots</a>
         </li>
         <li>
-          <a href="/coinflip">coinflip</a>
+          <a className="text-white" href="/coinflip">coinflip</a>
         </li>
       </ul>
     </div>

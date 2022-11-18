@@ -370,21 +370,21 @@ export default function CoinflipPage() {
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
-      <div>
+      <div className="relative">
         <Header />
-        <div className="flex justify-center">
+        <div className="absolute right-5 top-2">
           <WalletMultiButton />
         </div>
       </div>
     );
   }
   return (
-    <div className="text-black flex gap-2 flex-col p-2">
+    <div className="text-black flex gap-2 flex-col relative">
       <Header />
-      <div className="flex justify-center">
+      <div className="absolute right-5 top-2">
         <WalletMultiButton />
       </div>
-      <div className="flex items-center">
+      <div className="absolute left-5 top-4 text-white">
         NETWORK:
         <select
           className="border-2 border-black p-2"

@@ -24,9 +24,7 @@ const MINT_SIZE = MintLayout.span;
 const mode1Default = "DFsK8SCKGDwwuGJxiA6q9vNhpxBuJhWb6iZbGcLqttEu";
 const mode2Default = "ERRbgy1zePa3kYs2xfjXo457p54hFPEZ1Rm37UdSJCcr"; //"H72H4tF6kRhSP8SUzoRDeivXz3255TDnAMvnG66cALHY";
 
-const defaultProgramIDs = [
-  idl_mint_machine.metadata.address
-];
+const defaultProgramIDs = [idl_mint_machine.metadata.address];
 
 export default function MyNftMachine() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
@@ -409,40 +407,35 @@ export default function MyNftMachine() {
   if (!wallet.connected) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
-      <div>
+      <div className="relative">
         <Header />
-        <div className="flex justify-center">
+        <div className="absolute right-5 top-2">
           <WalletMultiButton />
         </div>
       </div>
     );
   } else {
     return (
-      <div className="App">
+      <div className="App relative">
         <Header />
-        <div className="flex gap-3 flex-col m-5">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
+        <div className="absolute right-5 top-2">
+          <WalletMultiButton />
+        </div>
+        <div className="absolute left-5 top-4 text-white">
+          NETWORK:
+          <select
+            className="border-2 border-black p-2"
+            onChange={(e) => {
+              setNetwork(e.target.value as WalletAdapterNetwork);
+              localStorage.setItem("network", e.target.value);
             }}
+            value={network}
           >
-            <WalletMultiButton />
-          </div>
-          <div className="flex items-center justify-center">
-            NETWORK:``
-            <select
-              className="border-2 border-black p-2"
-              onChange={(e) => {
-                setNetwork(e.target.value as WalletAdapterNetwork);
-                localStorage.setItem("network", e.target.value);
-              }}
-              value={network}
-            >
-              <option value={WalletAdapterNetwork.Mainnet}>Mainnet</option>
-              <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
-            </select>
-          </div>
+            <option value={WalletAdapterNetwork.Mainnet}>Mainnet</option>
+            <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
+          </select>
+        </div>
+        <div className="flex gap-3 flex-col m-5">
           <div className="flex items-center justify-center">
             <StorageSelect itemkey="nft-program" label="Program ID" defaultItems={defaultProgramIDs} defaultItem={programID} setItem={setProgramID} />
           </div>

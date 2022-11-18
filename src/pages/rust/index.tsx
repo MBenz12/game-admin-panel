@@ -1477,47 +1477,47 @@ export default function Rust() {
   if (!wallet.connected) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
-      <div>
+      <div className="relative">
         <Header />
-        <div className="flex justify-center">
+        <div className="absolute right-5 top-2">
           <WalletMultiButton />
         </div>
       </div>
     );
   } else {
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 relative">
         <Header />
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <div className="absolute right-5 top-2">
           <WalletMultiButton />
         </div>
+        <div className="absolute left-5 top-4 text-white">
+          NETWORK:
+          <select
+            className="border border-black p-2"
+            onChange={(e) => {
+              setNetwork(e.target.value as WalletAdapterNetwork);
+              localStorage.setItem("network", e.target.value);
+            }}
+            value={network}
+          >
+            <option value={WalletAdapterNetwork.Mainnet}>Mainnet</option>
+            <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
+          </select>
+        </div>
         {
-          <>
-            NETWORK:
-            <select
-              className="border-2 border-black p-2"
-              onChange={(e) => {
-                setNetwork(e.target.value as WalletAdapterNetwork);
-                localStorage.setItem("network", e.target.value);
-              }}
-              value={network}
-            >
-              <option value="mainnet-beta">Mainnet</option>
-              <option value="devnet">Devnet</option>
-            </select>
-          </>
-        }
-        {
-          <div style={{ margin: "15px" }}>
+          <div className="m-[15px] flx flex-col gap-2">
             {!value && (
-              <button className="border-2 border-black p-2" onClick={announceRaffleFinalized}>
-                Announce Raffle Finalized
-              </button>
+              <div className="flex justify-center">
+                <button className="border border-black p-1" onClick={announceRaffleFinalized}>
+                  Announce Raffle Finalized
+                </button>
+              </div>
             )}
             {
               <div>
                 <input
-                  className="border-2 border-black p-2"
+                  className="border border-black p-1"
                   type="text"
                   id="raffleAddress1"
                   ref={raffleAddressInput1}
@@ -1530,7 +1530,7 @@ export default function Rust() {
             {
               <div>
                 <input
-                  className="border-2 border-black p-2"
+                  className="border border-black p-1"
                   type="text"
                   id="raffleNftWinnerTx"
                   ref={raffleNftWinnerTxInput}
@@ -1543,7 +1543,7 @@ export default function Rust() {
             {
               <div>
                 <input
-                  className="border-2 border-black p-2"
+                  className="border border-black p-1"
                   type="text"
                   id="raffleRafflerTx"
                   ref={raffleRafflerTxInput}
@@ -1557,61 +1557,65 @@ export default function Rust() {
         }
 
         {
-          <div style={{ margin: "15px" }}>
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={initGlobal}>
-                Init Global
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={() => fetchGlobal()}>
-                Fetch Global
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={() => addAdmin(new PublicKey(globalAddress), true)}>
-                Add Admin
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={() => addAdmin(new PublicKey(globalAddress), false)}>
-                Remove Admin
-              </button>
-            )}
+          <div className="m-[15px]">
+            <div className="flex justify-center">
+              {!value && (
+                <button className="border border-black p-1" onClick={initGlobal}>
+                  Init Global
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={() => fetchGlobal()}>
+                  Fetch Global
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={() => addAdmin(new PublicKey(globalAddress), true)}>
+                  Add Admin
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={() => addAdmin(new PublicKey(globalAddress), false)}>
+                  Remove Admin
+                </button>
+              )}
+            </div>
             {
               <div>
-                <input className="border-2 border-black p-2" type="text" id="globalAddress" onChange={handleFieldChange} value={globalAddress} style={{ width: 400 }} />
+                <input className="border border-black p-1" type="text" id="globalAddress" onChange={handleFieldChange} value={globalAddress} style={{ width: 400 }} />
               </div>
             }
           </div>
         }
 
         {
-          <div style={{ margin: "15px" }}>
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={initVault}>
-                Init Vault
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={claimSkt}>
-                Claim Skt Token
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={fetchVault}>
-                Fetch Vault
-              </button>
-            )}
-            {!value && (
-              <button className="border-2 border-black p-2" onClick={withdrawVault}>
-                Withdraw From Vault
-              </button>
-            )}
+          <div className="m-[15px]">
+            <div className="flex justify-center">
+              {!value && (
+                <button className="border border-black p-1" onClick={initVault}>
+                  Init Vault
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={claimSkt}>
+                  Claim Skt Token
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={fetchVault}>
+                  Fetch Vault
+                </button>
+              )}
+              {!value && (
+                <button className="border border-black p-1" onClick={withdrawVault}>
+                  Withdraw From Vault
+                </button>
+              )}
+            </div>
             {
               <div>
                 {"Vault Address: "}
-                <input className="border-2 border-black p-2" type="text" id="vaultAddress" onChange={handleFieldChange} value={vaultAddress} style={{ width: 400 }} />
+                <input className="border border-black p-1" type="text" id="vaultAddress" onChange={handleFieldChange} value={vaultAddress} style={{ width: 400 }} />
               </div>
             }
           </div>
@@ -1619,64 +1623,66 @@ export default function Rust() {
         {
           <div>
             {!value && (
-              <button className="border-2 border-black p-2" onClick={initRaffleAndTransferNFT}>
+              <button className="border border-black p-1" onClick={initRaffleAndTransferNFT}>
                 Init Raffle
               </button>
             )}
             {!value && (
-              <button className="border-2 border-black p-2" onClick={fetchRaffle}>
+              <button className="border border-black p-1" onClick={fetchRaffle}>
                 Fetch Raffle
               </button>
             )}
             {!value && (
-              <button className="border-2 border-black p-2" onClick={finalizeRaffle}>
+              <button className="border border-black p-1" onClick={finalizeRaffle}>
                 Finalize Raffle
               </button>
             )}
           </div>
         }
-        {!value && (
-          <button className="border-2 border-black p-2" onClick={initNftVault}>
-            Init NFT Vault
-          </button>
-        )}
-        {!value && (
-          <button className="border-2 border-black p-2" onClick={withdrawFromPda}>
-            Withdraw From Raffle PDA
-          </button>
-        )}
+        <div className="flex justify-center">
+          {!value && (
+            <button className="border border-black p-1" onClick={initNftVault}>
+              Init NFT Vault
+            </button>
+          )}
+          {!value && (
+            <button className="border border-black p-1" onClick={withdrawFromPda}>
+              Withdraw From Raffle PDA
+            </button>
+          )}
 
-        {!value && (
-          <button className="border-2 border-black p-2" onClick={buyTicketSOL}>
-            Buy Ticket SOL
-          </button>
-        )}
-        {!value && (
-          <button className="border-2 border-black p-2" onClick={buyTicketSPL}>
-            Buy Ticket SPL
-          </button>
-        )}
-        {!value && (
-          <button className="border-2 border-black p-2" onClick={() => transferSPLToken(new PublicKey(REACT_APP_RAFFLE_VAULT_WALLET_ADDRESS), splTokenAddressTransfer)}>
-            Transfer Token
-          </button>
-        )}
+          {!value && (
+            <button className="border border-black p-1" onClick={buyTicketSOL}>
+              Buy Ticket SOL
+            </button>
+          )}
+          {!value && (
+            <button className="border border-black p-1" onClick={buyTicketSPL}>
+              Buy Ticket SPL
+            </button>
+          )}
+          {!value && (
+            <button className="border border-black p-1" onClick={() => transferSPLToken(new PublicKey(REACT_APP_RAFFLE_VAULT_WALLET_ADDRESS), splTokenAddressTransfer)}>
+              Transfer Token
+            </button>
+          )}
+        </div>
         {
           <div>
             {!value && (
-              <button className="border-2 border-black p-2" onClick={mintWL}>
+              <button className="border border-black p-1" onClick={mintWL}>
                 Mint WL
               </button>
             )}
 
             {!value && (
-              <button className="border-2 border-black p-2" onClick={mintToken}>
+              <button className="border border-black p-1" onClick={mintToken}>
                 Mint Token
               </button>
             )}
 
             {!value && (
-              <button className="border-2 border-black p-2" onClick={mintTokenFromMainnet}>
+              <button className="border border-black p-1" onClick={mintTokenFromMainnet}>
                 Mint Token Mainnet
               </button>
             )}
@@ -1685,13 +1691,13 @@ export default function Rust() {
         {
           <div>
             {!value && (
-              <button className="border-2 border-black p-2" onClick={updateMetaDataToken}>
+              <button className="border border-black p-1" onClick={updateMetaDataToken}>
                 Update Meta Data Token
               </button>
             )}
 
             {!value && (
-              <button className="border-2 border-black p-2" onClick={updateMetaData}>
+              <button className="border border-black p-1" onClick={updateMetaData}>
                 Update Meta Data
               </button>
             )}
@@ -1701,41 +1707,41 @@ export default function Rust() {
         {
           <div>
             {!value && (
-              <button className="border-2 border-black p-2" onClick={convertKCtoSKT}>
+              <button className="border border-black p-1" onClick={convertKCtoSKT}>
                 Convert $KC to $SKT
               </button>
             )}
 
             {!value && (
-              <button className="border-2 border-black p-2" onClick={convertKCtoSKTFinalized}>
+              <button className="border border-black p-1" onClick={convertKCtoSKTFinalized}>
                 Finalize
               </button>
             )}
 
             {!value && (
-              <button className="border-2 border-black p-2" onClick={encrypt}>
+              <button className="border border-black p-1" onClick={encrypt}>
                 Encrypt
               </button>
             )}
           </div>
         }
 
-        {<h3>Init / Raffle Transfer:</h3>}
+        {<h3 className="text-[20px] font-bold">Init / Raffle Transfer:</h3>}
 
         {
-          <h3>
+          <h3 className="text-[20px] font-bold">
             {"SPL Token Address Transfer: "}
-            <input className="border-2 border-black p-2" type="text" id="splTokenAddressTransfer" onChange={handleFieldChange} value={splTokenAddressTransfer.toString()} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" id="splTokenAddressTransfer" onChange={handleFieldChange} value={splTokenAddressTransfer.toString()} style={{ width: 400 }} />
           </h3>
         }
 
-        {<h3>Raffle Input:</h3>}
+        {<h3 className="text-[20px] font-bold">Raffle Input:</h3>}
 
         {
-          <h3>
+          <h3 className="text-[20px] font-bold">
             {"Raffle Address : "}
             <input
-              className="border-2 border-black p-2"
+              className="border border-black p-1"
               type="text"
               id="raffleAddress"
               ref={raffleAddressInput}
@@ -1750,17 +1756,17 @@ export default function Rust() {
             <br />
 
             {"SPL Token Address : "}
-            <input className="border-2 border-black p-2" type="text" id="splTokenAddress" onChange={handleFieldChange} value={splTokenAddress} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" id="splTokenAddress" onChange={handleFieldChange} value={splTokenAddress} style={{ width: 400 }} />
 
             <br />
 
             {"Raffle Tickets : "}
-            <input className="border-2 border-black p-2" type="number" id="ticketsAmount" onChange={handleFieldChange} value={ticketsAmount} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="number" id="ticketsAmount" onChange={handleFieldChange} value={ticketsAmount} style={{ width: 400 }} />
           </h3>
         }
 
         {
-          <h3>
+          <h3 className="text-[20px] font-bold">
             Raffle Output:
             <br />
             <div>
@@ -1769,39 +1775,40 @@ export default function Rust() {
           </h3>
         }
 
-        {<h3>Delegate:</h3>}
+        {<h3 className="text-[20px] font-bold">Delegate:</h3>}
 
         {
-          <h3>
+          <h3 className="text-[20px] font-bold">
             {"Delegator Address : "}
-            <input className="border-2 border-black p-2" type="text" onChange={(e: any) => setDelegatorAddress(e.target.value)} value={delegatorAddress} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" onChange={(e: any) => setDelegatorAddress(e.target.value)} value={delegatorAddress} style={{ width: 400 }} />
 
             <br />
 
             {"NFT Mint Address : "}
-            <input className="border-2 border-black p-2" type="text" onChange={(e) => setNftMintAddress(e.target.value)} value={nftMintAddress} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" onChange={(e) => setNftMintAddress(e.target.value)} value={nftMintAddress} style={{ width: 400 }} />
 
             <br />
 
             {"Owner Address : "}
-            <input className="border-2 border-black p-2" type="text" onChange={(e) => setOwnerAddress(e.target.value)} value={ownerAddress} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" onChange={(e) => setOwnerAddress(e.target.value)} value={ownerAddress} style={{ width: 400 }} />
 
             <br />
 
             {"Target Address : "}
-            <input className="border-2 border-black p-2" type="text" onChange={(e) => setTargetAddress(e.target.value)} value={targetAddress} style={{ width: 400 }} />
+            <input className="border border-black p-1" type="text" onChange={(e) => setTargetAddress(e.target.value)} value={targetAddress} style={{ width: 400 }} />
 
             <br />
-
-            <button className="border-2 border-black p-2" onClick={approve}>
-              Approve
-            </button>
-            <button className="border-2 border-black p-2" onClick={revoke}>
-              Revoke
-            </button>
-            <button className="border-2 border-black p-2" onClick={transfer}>
-              Transfer
-            </button>
+            <div className="flex justify-center">
+              <button className="border border-black p-1" onClick={approve}>
+                Approve
+              </button>
+              <button className="border border-black p-1" onClick={revoke}>
+                Revoke
+              </button>
+              <button className="border border-black p-1" onClick={transfer}>
+                Transfer
+              </button>
+            </div>
           </h3>
         }
       </div>

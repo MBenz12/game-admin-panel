@@ -4,13 +4,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 * {
-  font-family: 'Urbanist';
-}
-
-* {
   box-sizing: border-box;
 }
 
+a {
+  text-decoration: none;
+}
 blockquote,
 dl,
 dd,
@@ -74,3 +73,4 @@ button:focus {
   outline: 1px dotted;
   outline: 5px auto -webkit-focus-ring-color;
 }
+

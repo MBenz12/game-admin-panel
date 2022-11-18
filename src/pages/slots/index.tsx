@@ -14,12 +14,8 @@ import { useEffect, useMemo, useState } from "react";
 import { convertLog, default_commission, default_community, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress, isAdmin } from "./utils";
 const idl_slots = require("idl/slots.json");
 
-const deafultProgramIDs = [
-  idl_slots.metadata.address
-];
-const deafultGamenames = [
-  game_name
-];
+const deafultProgramIDs = [idl_slots.metadata.address];
+const deafultGamenames = [game_name];
 export default function SlotsPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
@@ -462,26 +458,26 @@ export default function SlotsPage() {
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
-      <div>
+      <div className="relative">
         <Header />
-        <div className="flex justify-center">
+        <div className="absolute right-5 top-2">
           <WalletMultiButton />
         </div>
       </div>
     );
   }
   return (
-    <div className="text-black flex gap-2 flex-col p-2">
+    <div className="text-black flex gap-2 flex-col relative">
       <Header />
-      <div className="flex justify-center">
+      <div className="absolute right-5 top-2">
         <WalletMultiButton />
       </div>
-      <div className="flex items-center">
+      <div className="absolute left-5 top-4 text-white">
         NETWORK:
         <select
           className="border-2 border-black p-2"
           onChange={(e) => {
-            setNetwork(e.target.value as WalletAdapterNetwork);
+            setNetwork(e.target.value as WalletAdapterNetwork)
             localStorage.setItem("network", e.target.value);
           }}
           value={network}
@@ -490,8 +486,8 @@ export default function SlotsPage() {
           <option value={WalletAdapterNetwork.Devnet}>Devnet</option>
         </select>
       </div>
-      <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />      
-      <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />    
+      <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
+      <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
       <div>
         <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
         <label htmlFor="sol">SOL</label>
