@@ -27,6 +27,7 @@ export default function StorageSelect({
       setSelectedItem(selectedItem);
       setItem(selectedItem);
     } else {
+      setItem(defaultItem);
       setSelectedItem(defaultItem);
       localStorage.setItem(itemkey, defaultItem);      
     }
