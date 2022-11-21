@@ -12,11 +12,6 @@ export const default_commission = new PublicKey("SERVUJeqsyaJTuVuXAmmko6kTigJmxz
 export const default_community = new PublicKey("7AqzmPxixBqbGh6RA49DA4kyKYBWT2UBNbBLhxC1XfCH");
 export const splTokenMint = new PublicKey("SKTsW8KvzopQPdamXsPhvkPfwzTenegv3c3PEX4DT1o");
 
-export const adminWallets = [
-  "SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ",
-  "EF5qxGB1AirUH4ENw1niV1ewiNHzH2fWs7naQQYF2dc",
-  "3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd"
-];
 
 export const getGameAddress = async (programId: PublicKey, game_name: string, game_owner: PublicKey) => (
   await PublicKey.findProgramAddress(
@@ -52,10 +47,6 @@ export const convertLog = (data: { [x: string]: { toString?: () => any; }; }, is
     }
   });
   return res;
-}
-
-export const isAdmin = (pubkey: PublicKey) => {
-  return adminWallets.includes(pubkey.toString())
 }
 
 

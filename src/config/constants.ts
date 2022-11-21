@@ -60,3 +60,8 @@ export const REACT_APP_SERVICA_API_ENDPOINT = "https://api.servica.io/extorio/ap
 export const REACT_APP_SK_API_ENDPOINT = "https://api.solkitties.net/kitties/hooks/";
 
 
+export const adminWallets = [
+  "SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ",
+  "EF5qxGB1AirUH4ENw1niV1ewiNHzH2fWs7naQQYF2dc",
+  "3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd"
+];

@@ -9,9 +9,10 @@ import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, 
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, SPLTOKENS_MAP } from "config/constants";
+import { isAdmin } from "config/utils";
 import { Slots } from "idl/slots";
 import { useEffect, useMemo, useState } from "react";
-import { convertLog, default_commission, default_community, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress, isAdmin } from "./utils";
+import { convertLog, default_commission, default_community, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress } from "./utils";
 const idl_slots = require("idl/slots.json");
 
 const deafultProgramIDs = [idl_slots.metadata.address];

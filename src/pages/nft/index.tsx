@@ -11,7 +11,7 @@ import { Buffer } from "buffer";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { NFT_VAULT_POOL_SEED } from "config/constants";
-import { getAssociatedTokenAddressAndTransaction } from "config/utils";
+import { getAssociatedTokenAddressAndTransaction, isAdmin } from "config/utils";
 import { MintMachine } from "idl/mint_machine";
 import { useEffect, useMemo, useState } from "react";
 
@@ -404,7 +404,7 @@ export default function MyNftMachine() {
     }
   }
 
-  if (!wallet.connected) {
+  if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
       <div className="relative">

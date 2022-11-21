@@ -24,7 +24,7 @@ import {
   VAULT_ADDRESS,
   VAULT_SKT_SEED_PREFIX
 } from "config/constants";
-import { getAssociatedTokenAddressAndTransaction, raffleTransactionDataType } from "config/utils";
+import { getAssociatedTokenAddressAndTransaction, isAdmin, raffleTransactionDataType } from "config/utils";
 import { AnchorRaffleTicket } from "idl/anchor_raffle_ticket";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -1474,7 +1474,7 @@ export default function Rust() {
     //console.log('value is:', event.target.value);
   };
 
-  if (!wallet.connected) {
+  if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
       <div className="relative">
