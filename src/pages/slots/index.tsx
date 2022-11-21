@@ -75,7 +75,7 @@ export default function SlotsPage() {
 
   async function initGame() {
     const { provider, program } = getProviderAndProgram();
-    const [game, game_bump] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game, game_bump] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const mint = newTokenType ? splTokenMint : NATIVE_MINT;
     const transaction = new Transaction();
 
@@ -127,7 +127,7 @@ export default function SlotsPage() {
 
   async function updateCommunityWallet(index: number, remove: boolean) {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const gameData = await program.account.game.fetchNullable(game);
     if (!gameData) return;
     const mint = gameData?.tokenMint;
@@ -155,8 +155,8 @@ export default function SlotsPage() {
 
   async function addPlayer() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const [player, bump] = await getPlayerAddress(provider.wallet.publicKey, game);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const [player, bump] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
 
     const transaction = new Transaction();
 
@@ -178,8 +178,8 @@ export default function SlotsPage() {
 
   async function play() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const [player] = await getPlayerAddress(provider.wallet.publicKey, game);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
 
     const transaction = new Transaction();
     const gameData = await program.account.game.fetchNullable(game);
@@ -251,8 +251,8 @@ export default function SlotsPage() {
     console.log("Network: ", network);
     console.log("Program ID: ", program.programId.toString());
 
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const [player] = await getPlayerAddress(provider.wallet.publicKey, game);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
     const playerData = await program.account.player.fetchNullable(player);
     const gameData = await program.account.game.fetchNullable(game);
     setPlayerData(playerData);
@@ -289,8 +289,8 @@ export default function SlotsPage() {
 
   async function claim() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
-    const [player] = await getPlayerAddress(provider.wallet.publicKey, game);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
     const mint = gameData.tokenMint;
 
     const transaction = new Transaction();
@@ -323,7 +323,7 @@ export default function SlotsPage() {
 
   async function withdraw() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
 
     const transaction = new Transaction();
     const mint = gameData.tokenMint;
@@ -350,7 +350,7 @@ export default function SlotsPage() {
 
   async function updateCommission() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const transaction = new Transaction();
 
     const mint = gameData.tokenMint;
@@ -387,7 +387,7 @@ export default function SlotsPage() {
 
   async function setWinning() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const transaction = new Transaction();
     transaction.add(
       program.transaction.setWinning(
@@ -416,7 +416,7 @@ export default function SlotsPage() {
 
   async function fund() {
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(gamename, provider.wallet.publicKey);
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const transaction = new Transaction();
     const mint = gameData.tokenMint;
 
@@ -453,7 +453,7 @@ export default function SlotsPage() {
   }
   useEffect(() => {
     fetchData();
-  }, [wallet.connected, gamename, network]);
+  }, [wallet.connected, gamename, network, programID]);
 
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */

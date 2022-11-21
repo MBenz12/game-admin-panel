@@ -25,9 +25,10 @@ export default function StorageSelect({
     const items = localStorage.getItem(`${itemkey}s`);
     if (selectedItem) {
       setSelectedItem(selectedItem);
+      setItem(selectedItem);
     } else {
       setSelectedItem(defaultItem);
-      localStorage.setItem(itemkey, defaultItem);
+      localStorage.setItem(itemkey, defaultItem);      
     }
     if (items) {
       setItems(JSON.parse(items));
