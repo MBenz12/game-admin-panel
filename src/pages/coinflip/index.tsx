@@ -8,7 +8,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
-import { eCurrencyType, SPLTOKENS_MAP } from "config/constants";
+import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
 import { isAdmin } from "config/utils";
 import { Coinflip } from "idl/coinflip";
 import { useEffect, useMemo, useState } from "react";
@@ -20,11 +20,13 @@ const deafultGamenames = [game_name];
 
 export default function CoinflipPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
-  const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
+  const connection = useMemo(() => new Connection(network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET, "confirmed"), [network]);
   const [programID, setProgramID] = useState(idl_coinflip.metadata.address);
-  useEffect(() => {
+  useEffect(() =>
+  {
     const network = localStorage.getItem("network");
-    if (network) {
+    if (network)
+    {
       setNetwork(network as WalletAdapterNetwork);
     }
   }, []);

@@ -63,6 +63,7 @@
     ]
   },
   "devDependencies": {
+    "@types/bs58": "^4.0.1",
     "autoprefixer": "^10.4.13",
     "eslint": "^8.27.0",
     "postcss": "^8.4.19",

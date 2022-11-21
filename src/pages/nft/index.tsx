@@ -10,7 +10,7 @@ import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SYSVAR_RENT_PUB
 import { Buffer } from "buffer";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
-import { NFT_VAULT_POOL_SEED } from "config/constants";
+import { NFT_VAULT_POOL_SEED, RPC_DEVNET, RPC_MAINNET } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction, isAdmin } from "config/utils";
 import { MintMachine } from "idl/mint_machine";
 import { useEffect, useMemo, useState } from "react";
@@ -28,7 +28,7 @@ const defaultProgramIDs = [idl_mint_machine.metadata.address];
 
 export default function MyNftMachine() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
-  const connection = useMemo(() => new Connection(clusterApiUrl(network), "confirmed"), [network]);
+  const connection = useMemo(() => new Connection(network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET, "confirmed"), [network]);
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
   const [programID, setProgramID] = useState(idl_mint_machine.metadata.address);

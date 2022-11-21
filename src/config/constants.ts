@@ -1,5 +1,8 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 
+export const RPC_MAINNET = "https://quiet-aged-frog.solana-mainnet.quiknode.pro/6a56c0f12de472ff85a245955e5ff33d99704b1a";
+export const RPC_DEVNET = "https://delicate-withered-theorem.solana-devnet.quiknode.pro/0399d35b8b5de1ba358bd014f584ba88d7709bcf";
+
 export enum eCurrencyType {
   SOL = "SOL",
   DUST = "DUST",

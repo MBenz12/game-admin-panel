@@ -22,7 +22,7 @@ import {
   SOLANA_RPC_HOST_MAINNET,
   SPLTOKENS_MAP_GET_TOKEN_NAME,
   VAULT_ADDRESS,
-  VAULT_SKT_SEED_PREFIX
+  VAULT_SKT_SEED_PREFIX, RPC_DEVNET, RPC_MAINNET
 } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction, isAdmin, raffleTransactionDataType } from "config/utils";
 import { AnchorRaffleTicket } from "idl/anchor_raffle_ticket";
@@ -50,8 +50,7 @@ const uri_json = require("minting/URI.json");
 const programID = REACT_APP_RAFFLES_PROGRAM_ID;
 
 export default function Rust() {
-  // const {connection} = useConnection();
-  const [connection, setConnection] = useState(new Connection(clusterApiUrl("devnet"), "confirmed"));
+  const [connection, setConnection] = useState(new Connection(RPC_DEVNET, "confirmed"));
   const [value] = useState(null);
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
@@ -77,7 +76,7 @@ export default function Rust() {
   const raffleRafflerTxInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const url = network === "mainnet-beta" ? "https://quiet-aged-frog.solana-mainnet.quiknode.pro/6a56c0f12de472ff85a245955e5ff33d99704b1a" : clusterApiUrl(network);
+    const url = network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET;
     const connection = new Connection(url, "confirmed");
     setConnection(connection);
     console.log(connection);
