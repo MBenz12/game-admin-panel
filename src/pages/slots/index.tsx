@@ -122,7 +122,7 @@ export default function SlotsPage() {
       )
     );
     const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
-    await provider.connection.confirmTransaction(txSignature, "finalized");
+    await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
   }

@@ -93,7 +93,7 @@ export default function CoinflipPage() {
       })
     );
     const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "finalized");
+    await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
     fetchData();
   }
