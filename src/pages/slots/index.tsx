@@ -5,7 +5,7 @@ import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { clusterApiUrl, Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
@@ -120,8 +120,8 @@ export default function SlotsPage() {
         }
       )
     );
-    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "confirmed");
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+    await provider.connection.confirmTransaction(txSignature, "finalized");
     console.log(txSignature);
     fetchData();
   }
@@ -285,6 +285,11 @@ export default function SlotsPage() {
         return boundries;
       });
       setWinPercents(winPercents);
+    } else {
+      setCommunityWallets([]);
+      setNewCommunityWallets([]);
+      setNewRoyalties([]);
+      setCommunityBalances([]);
     }
   }
 
