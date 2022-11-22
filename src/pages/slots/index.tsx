@@ -81,8 +81,9 @@ export default function SlotsPage() {
     const transaction = new Transaction();
 
     console.log("Init Game:");
-    console.log("ProgramId:", program.programId.toString());
-    console.log("Mint Address:", mint.toString());
+    console.log("-> ProgramId:", program.programId.toString());
+    console.log("-> Game Name:", gamename);
+    console.log("-> Mint Address:", mint.toString());
 
     const gameTreasuryAta = await getAta(mint, game, true);
 
@@ -251,6 +252,7 @@ export default function SlotsPage() {
 
     console.log("Network: ", network);
     console.log("Program ID: ", program.programId.toString());
+    console.log("Game Name: ", gamename);
 
     const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
