@@ -80,6 +80,7 @@ export default function SlotsPage() {
     const mint = newTokenType ? splTokenMint : NATIVE_MINT;
     const transaction = new Transaction();
 
+    console.log("Connection:", provider.connection);
     console.log("Init Game:");
     console.log("-> ProgramId:", program.programId.toString());
     console.log("-> Game Name:", gamename);
@@ -246,7 +247,8 @@ export default function SlotsPage() {
     }
   }
 
-  async function fetchData() {
+  async function fetchData()
+  {
     const { provider, program } = getProviderAndProgram();
     if (!provider.wallet) return;
 
@@ -287,9 +289,11 @@ export default function SlotsPage() {
         return boundries;
       });
       setWinPercents(winPercents);
-    } else {
-      setCommunityWallets([]);
-      setNewCommunityWallets([]);
+    }
+    else
+    {
+      //setCommunityWallets([]);
+      //setNewCommunityWallets([]);
       setNewRoyalties([]);
       setCommunityBalances([]);
     }
