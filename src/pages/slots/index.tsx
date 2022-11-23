@@ -295,7 +295,7 @@ export default function SlotsPage() {
     {
       setCommunityWallets([]);
       setNewCommunityWallets([default_community.toString()]);
-      setNewRoyalties([]);
+      setNewRoyalties([5]);
       setCommunityBalances([]);
     }
   }
