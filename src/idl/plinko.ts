@@ -139,7 +139,7 @@ export type Plinko = {
         {
           "name": "claimer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "backend",
@@ -159,11 +159,6 @@ export type Plinko = {
         {
           "name": "gameTreasuryAta",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "instructionSysvarAccount",
-          "isMut": false,
           "isSigner": false
         },
         {
@@ -364,7 +359,7 @@ export const IDL: Plinko = {
         {
           "name": "claimer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "backend",
@@ -384,11 +379,6 @@ export const IDL: Plinko = {
         {
           "name": "gameTreasuryAta",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "instructionSysvarAccount",
-          "isMut": false,
           "isSigner": false
         },
         {

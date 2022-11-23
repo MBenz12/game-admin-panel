@@ -139,7 +139,7 @@
         {
           "name": "claimer",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "backend",
@@ -159,11 +159,6 @@
         {
           "name": "gameTreasuryAta",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "instructionSysvarAccount",
-          "isMut": false,
           "isSigner": false
         },
         {
