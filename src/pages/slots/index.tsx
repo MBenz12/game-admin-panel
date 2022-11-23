@@ -262,6 +262,7 @@ export default function SlotsPage() {
     const gameData = await program.account.game.fetchNullable(game);
     setPlayerData(playerData);
     setGameData(gameData);
+    console.log(gameData);
     // @ts-ignore
     if (gameData) console.log("Game Data:", convertLog(gameData));
     // @ts-ignore
@@ -292,8 +293,8 @@ export default function SlotsPage() {
     }
     else
     {
-      //setCommunityWallets([]);
-      //setNewCommunityWallets([]);
+      setCommunityWallets([]);
+      setNewCommunityWallets([default_community.toString()]);
       setNewRoyalties([]);
       setCommunityBalances([]);
     }
