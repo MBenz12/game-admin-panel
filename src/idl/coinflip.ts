@@ -33,11 +33,31 @@ export type Coinflip = {
         {
           "name": "tokenMint",
           "type": "publicKey"
+        },
+        {
+          "name": "communityWallets",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
+          "name": "royalties",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
+          "type": "u16"
         }
       ]
     },
     {
-      "name": "setRoyalty",
+      "name": "setCommunityWallet",
       "accounts": [
         {
           "name": "payer",
@@ -52,11 +72,36 @@ export type Coinflip = {
       ],
       "args": [
         {
-          "name": "royaltyWallet",
+          "name": "communityWallet",
           "type": "publicKey"
         },
         {
-          "name": "royaltyFee",
+          "name": "royalty",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCommission",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
           "type": "u16"
         }
       ]
@@ -142,7 +187,7 @@ export type Coinflip = {
           "isSigner": false
         },
         {
-          "name": "royaltyTreasuryAta",
+          "name": "commissionTreasuryAta",
           "isMut": true,
           "isSigner": false
         },
@@ -172,6 +217,32 @@ export type Coinflip = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "sendToCommunityWallet",
+      "accounts": [
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "communityTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "claim",
@@ -310,12 +381,36 @@ export type Coinflip = {
             "type": "publicKey"
           },
           {
-            "name": "royaltyFee",
+            "name": "royalties",
+            "type": {
+              "vec": "u16"
+            }
+          },
+          {
+            "name": "communityWallets",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "commissionWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "commissionFee",
             "type": "u16"
           },
           {
-            "name": "royaltyWallet",
-            "type": "publicKey"
+            "name": "communityBalances",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "communityPendingBalances",
+            "type": {
+              "vec": "u64"
+            }
           },
           {
             "name": "mainBalance",
@@ -449,11 +544,31 @@ export const IDL: Coinflip = {
         {
           "name": "tokenMint",
           "type": "publicKey"
+        },
+        {
+          "name": "communityWallets",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
+          "name": "royalties",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
+          "type": "u16"
         }
       ]
     },
     {
-      "name": "setRoyalty",
+      "name": "setCommunityWallet",
       "accounts": [
         {
           "name": "payer",
@@ -468,11 +583,36 @@ export const IDL: Coinflip = {
       ],
       "args": [
         {
-          "name": "royaltyWallet",
+          "name": "communityWallet",
           "type": "publicKey"
         },
         {
-          "name": "royaltyFee",
+          "name": "royalty",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCommission",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
           "type": "u16"
         }
       ]
@@ -558,7 +698,7 @@ export const IDL: Coinflip = {
           "isSigner": false
         },
         {
-          "name": "royaltyTreasuryAta",
+          "name": "commissionTreasuryAta",
           "isMut": true,
           "isSigner": false
         },
@@ -588,6 +728,32 @@ export const IDL: Coinflip = {
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "sendToCommunityWallet",
+      "accounts": [
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "communityTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "claim",
@@ -726,12 +892,36 @@ export const IDL: Coinflip = {
             "type": "publicKey"
           },
           {
-            "name": "royaltyFee",
+            "name": "royalties",
+            "type": {
+              "vec": "u16"
+            }
+          },
+          {
+            "name": "communityWallets",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "commissionWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "commissionFee",
             "type": "u16"
           },
           {
-            "name": "royaltyWallet",
-            "type": "publicKey"
+            "name": "communityBalances",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "communityPendingBalances",
+            "type": {
+              "vec": "u64"
+            }
           },
           {
             "name": "mainBalance",

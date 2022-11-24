@@ -33,11 +33,31 @@
         {
           "name": "tokenMint",
           "type": "publicKey"
+        },
+        {
+          "name": "communityWallets",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
+          "name": "royalties",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
+          "type": "u16"
         }
       ]
     },
     {
-      "name": "setRoyalty",
+      "name": "setCommunityWallet",
       "accounts": [
         {
           "name": "payer",
@@ -52,11 +72,36 @@
       ],
       "args": [
         {
-          "name": "royaltyWallet",
+          "name": "communityWallet",
           "type": "publicKey"
         },
         {
-          "name": "royaltyFee",
+          "name": "royalty",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "setCommission",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "commissionWallet",
+          "type": "publicKey"
+        },
+        {
+          "name": "commissionFee",
           "type": "u16"
         }
       ]
@@ -142,7 +187,7 @@
           "isSigner": false
         },
         {
-          "name": "royaltyTreasuryAta",
+          "name": "commissionTreasuryAta",
           "isMut": true,
           "isSigner": false
         },
@@ -172,6 +217,32 @@
           "type": "u8"
         }
       ]
+    },
+    {
+      "name": "sendToCommunityWallet",
+      "accounts": [
+        {
+          "name": "game",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "communityTreasuryAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "claim",
@@ -310,12 +381,36 @@
             "type": "publicKey"
           },
           {
-            "name": "royaltyFee",
+            "name": "royalties",
+            "type": {
+              "vec": "u16"
+            }
+          },
+          {
+            "name": "communityWallets",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "commissionWallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "commissionFee",
             "type": "u16"
           },
           {
-            "name": "royaltyWallet",
-            "type": "publicKey"
+            "name": "communityBalances",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "communityPendingBalances",
+            "type": {
+              "vec": "u64"
+            }
           },
           {
             "name": "mainBalance",

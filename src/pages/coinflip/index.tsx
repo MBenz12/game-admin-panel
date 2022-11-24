@@ -11,6 +11,7 @@ import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
 import { isAdmin } from "config/utils";
 import { Coinflip } from "idl/coinflip";
+import { default_community } from "pages/slots/utils";
 import { useEffect, useMemo, useState } from "react";
 import { convertLog, default_commission, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress } from "./utils";
 
@@ -52,6 +53,11 @@ export default function CoinflipPage() {
   const [fundAmount, setFundAmount] = useState(0);
   const [tokenType, setTokenType] = useState(false);
   const [newTokenType, setNewTokenType] = useState(false);
+  const [communityBalances, setCommunityBalances] = useState<Array<number>>([]);
+  const [communityWallets, setCommunityWallets] = useState<Array<string>>([]);
+  const [newCommunityWallets, setNewCommunityWallets] = useState<Array<string>>([default_community.toString()]);
+  const [newRoyalties, setNewRoyalties] = useState<Array<number>>([5]);
+
   const [commissionWallet, setCommissionWallet] = useState(default_commission.toString());
   const [commissionFee, setCommissionFee] = useState(3);
   const [winPercents, setWinPercents] = useState([47.5, 47.5, 40, 40, 25, 16.7]);
@@ -78,17 +84,61 @@ export default function CoinflipPage() {
     let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
     if (instruction) transaction.add(instruction);
 
+    for (const communityWallet of newCommunityWallets) {
+      const communityTreasury = new PublicKey(communityWallet);
+      const communityTreasuryAta = await getAta(mint, communityTreasury);
+
+      const instruction = await getCreateAtaInstruction(provider, communityTreasuryAta, mint, communityTreasury);
+      if (instruction) transaction.add(instruction);
+    }
+
     const commissionTreasury = new PublicKey(commissionWallet);
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
     instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
     if (instruction) transaction.add(instruction);
 
     transaction.add(
-      program.transaction.createGame(gamename, game_bump, mint, {
+      program.transaction.createGame(
+        gamename, 
+        game_bump, 
+        mint, 
+        newCommunityWallets.map((addr) => new PublicKey(addr)),
+        newRoyalties.map((royalty) => royalty * 100),
+        new PublicKey(commissionWallet),
+        commissionFee * 100,
+        {
         accounts: {
           payer: provider.wallet.publicKey,
           game,
           systemProgram: SystemProgram.programId,
+        },
+      })
+    );
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+    await provider.connection.confirmTransaction(txSignature, "confirmed");
+    console.log(txSignature);
+    fetchData();
+  }
+
+  async function updateCommunityWallet(index: number, remove: boolean) {
+    const { provider, program } = getProviderAndProgram();
+    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const gameData = await program.account.game.fetchNullable(game);
+    if (!gameData) return;
+    const mint = gameData?.tokenMint;
+
+    const transaction = new Transaction();
+    const communityWallet = newCommunityWallets[index];
+    const communityTreasury = new PublicKey(communityWallet);
+    const communityTreasuryAta = await getAta(mint, communityTreasury);
+    const instruction = await getCreateAtaInstruction(provider, communityTreasuryAta, mint, communityTreasury);
+    if (instruction) transaction.add(instruction);
+
+    transaction.add(
+      program.transaction.setCommunityWallet(new PublicKey(communityWallet), remove ? 10001 : newRoyalties[index] * 100, {
+        accounts: {
+          payer: provider.wallet.publicKey,
+          game,
         },
       })
     );
@@ -145,7 +195,7 @@ export default function CoinflipPage() {
       );
     }
     const gameTreasuryAta = await getAta(mint, game, true);
-    const commissionTreasury = gameData.royaltyWallet;
+    const commissionTreasury = gameData.commissionWallet;
     const commissionTreasuryAta = await getAta(mint, commissionTreasury);
     instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
     if (instruction) transaction.add(instruction);
@@ -157,12 +207,26 @@ export default function CoinflipPage() {
           player,
           game,
           gameTreasuryAta,
-          royaltyTreasuryAta: commissionTreasuryAta,
+          commissionTreasuryAta,
           instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
         },
       })
     );
+
+    for (const communityWallet of gameData.communityWallets) {
+      const communityTreasuryAta = await getAta(mint, communityWallet);
+      transaction.add(
+        program.transaction.sendToCommunityWallet({
+          accounts: {
+            game,
+            gameTreasuryAta,
+            communityTreasuryAta,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          },
+        })
+      );
+    }
 
     const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
     await provider.connection.confirmTransaction(txSignature, "confirmed");
@@ -200,9 +264,19 @@ export default function CoinflipPage() {
       setTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
       setNewTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
       setGameBalance(gameData.mainBalance.toNumber());
-      setCommissionFee(gameData.royaltyFee / 100);
+      setCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
+      setNewCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
+      setNewRoyalties(gameData.royalties.map((royalty) => royalty / 100));
+      setCommunityBalances(gameData.communityBalances.map((balance) => balance.toNumber()));
+      setGameBalance(gameData.mainBalance.toNumber());
+      setCommissionFee(gameData.commissionFee / 100);
       // @ts-ignore
       setWinPercents(gameData.winPercents.map((percent) => percent / 200));
+    } else {
+      setCommunityWallets([]);
+      setNewCommunityWallets([default_community.toString()]);
+      setNewRoyalties([5]);
+      setCommunityBalances([]);
     }
   }
 
@@ -291,7 +365,7 @@ export default function CoinflipPage() {
     if (instruction) transaction.add(instruction);
 
     transaction.add(
-      program.transaction.setRoyalty(new PublicKey(commissionWallet), commissionFee * 100, {
+      program.transaction.setCommission(new PublicKey(commissionWallet), commissionFee * 100, {
         accounts: {
           payer: provider.wallet.publicKey,
           game,
@@ -441,6 +515,82 @@ export default function CoinflipPage() {
               </button>
             </>
           )}
+        </div>
+        {newCommunityWallets.map((communityWallet, index) => (
+          <div className="flex gap-2 items-center" key={index}>
+            <div>
+              Community Wallet:{" "}
+              <input
+                className="w-[450px] border-2 border-black p-2"
+                onChange={(e) => {
+                  const communityWallets = [...newCommunityWallets];
+                  communityWallets[index] = e.target.value;
+                  setNewCommunityWallets(communityWallets);
+                }}
+                disabled={communityWallets[index] === communityWallet}
+                value={newCommunityWallets[index]}
+              />
+            </div>
+            <div>
+              Royalty:{" "}
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                max={100}
+                step={0.01}
+                onChange={(e) => {
+                  const royalties = [...newRoyalties];
+                  royalties[index] = parseFloat(e.target.value || "0");
+                  setNewRoyalties(royalties);
+                }}
+                value={`${newRoyalties[index]}`}
+              />
+              %
+            </div>
+            {communityBalances.length > index && (
+              <div>
+                Balance: {communityBalances[index] / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+              </div>
+            )}
+
+            <button className="border-2 border-black p-2" onClick={() => updateCommunityWallet(index, false)}>
+              {communityWallets[index] === communityWallet ? "Update Royalty" : "Add New"}
+            </button>
+            {communityWallets.length > 0 && (
+              <>
+                <button
+                  className="border-2 border-black p-2"
+                  onClick={() => {
+                    if (communityWallets[index] === communityWallet) {
+                      updateCommunityWallet(index, true);
+                    } else {
+                      const communityWallets = [...newCommunityWallets];
+                      communityWallets.splice(index, 1);
+                      setNewCommunityWallets(communityWallets);
+                    }
+                  }}
+                >
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+        <div>
+          <button
+            className="border-2 border-black p-2"
+            onClick={() => {
+              const communityWallets = [...newCommunityWallets];
+              communityWallets.push("");
+              setNewCommunityWallets(communityWallets);
+              const royalties = [...newRoyalties];
+              royalties.push(0);
+              setNewRoyalties(royalties);
+            }}
+          >
+            +
+          </button>
         </div>
         {!!gameData && (
           <>
