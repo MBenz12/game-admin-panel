@@ -13,6 +13,7 @@ import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/co
 import { isAdmin } from "config/utils";
 import { Plinko } from "idl/plinko";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import * as nacl from "tweetnacl";
 import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress } from "./utils";
 
@@ -46,46 +47,57 @@ export default function PlinkoPage() {
   const [gameBalance, setGameBalance] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [fundAmount, setFundAmount] = useState(0);
-  const [tokenType, setTokenType] = useState(false);
-  const [newTokenType, setNewTokenType] = useState(false);
+  const [tokenMint, setTokenMint] = useState(NATIVE_MINT.toString());
+  const [newTokenMint, setNewTokenMint] = useState(NATIVE_MINT.toString());
   const [backendWallet, setBackendWallet] = useState(default_backend.toString());
 
-  const sktMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.SKT)!);
-  // const dustMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.DUST)!);
-  // const usdcMint = new PublicKey(SPLTOKENS_MAP.get(eCurrencyType.USDC)!);
-  const splTokenMint = sktMint;
+  const tokens = [
+    { symbol: 'SOL', address: NATIVE_MINT.toString() },
+    { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
+    { symbol: 'FORGE', address: SPLTOKENS_MAP.get(eCurrencyType.FORGE) },
+    { symbol: 'DUST', address: SPLTOKENS_MAP.get(eCurrencyType.DUST) },
+    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },    
+  ];
+
+  const [tokenSymbol, setTokenSymbol] = useState('SOL'); 
 
   const [gamename, setGamename] = useState(game_name);
 
   async function initGame() {
-    const { provider, program } = getProviderAndProgram();
-    const [game, game_bump] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-    const mint = newTokenType ? splTokenMint : NATIVE_MINT;
-    const transaction = new Transaction();
-
-    console.log("Init Game:");
-    console.log("ProgramId:", program.programId.toString());
-    console.log("Mint Address:", mint.toString());
-
-    const gameTreasuryAta = await getAta(mint, game, true);
-
-    let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
-    if (instruction) transaction.add(instruction);
-
-
-    transaction.add(
-      program.transaction.createGame(gamename, game_bump, mint, new PublicKey(backendWallet), {
-        accounts: {
-          payer: provider.wallet.publicKey,
-          game,
-          systemProgram: SystemProgram.programId,
-        },
-      })
-    );
-    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "finalized");
-    console.log(txSignature);
-    fetchData();
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [game, game_bump] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+      const mint = new PublicKey(newTokenMint);
+      const transaction = new Transaction();
+  
+      console.log("Init Game:");
+      console.log("ProgramId:", program.programId.toString());
+      console.log("Mint Address:", mint.toString());
+  
+      const gameTreasuryAta = await getAta(mint, game, true);
+  
+      let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
+      if (instruction) transaction.add(instruction);
+  
+  
+      transaction.add(
+        program.transaction.createGame(gamename, game_bump, mint, new PublicKey(backendWallet), {
+          accounts: {
+            payer: provider.wallet.publicKey,
+            game,
+            systemProgram: SystemProgram.programId,
+          },
+        })
+      );
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      await provider.connection.confirmTransaction(txSignature, "finalized");
+      console.log(txSignature);
+      fetchData();
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
   }
 
   async function fetchData() {
@@ -103,95 +115,114 @@ export default function PlinkoPage() {
     // @ts-ignore
 
     if (gameData) {
-      setTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
-      setNewTokenType(gameData.tokenMint.toString() !== NATIVE_MINT.toString());
+      setTokenMint(gameData.tokenMint.toString());
+      setTokenSymbol(tokens.filter(token => token.address === gameData.tokenMint.toString())[0].symbol);
+      setNewTokenMint(gameData.tokenMint.toString());
       setGameBalance(gameData.mainBalance.toNumber());
       setBackendWallet(gameData.backendWallet.toString());
     }
   }
 
   async function withdraw() {
-    const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-
-    const transaction = new Transaction();
-    const mint = gameData.tokenMint;
-    const claimerAta = await getAta(mint, provider.wallet.publicKey);
-    const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
-    if (instruction) transaction.add(instruction);
-    const gameTreasuryAta = await getAta(mint, game, true);
-    transaction.add(
-      program.transaction.withdraw(new anchor.BN(LAMPORTS_PER_SOL * withdrawAmount), {
-        accounts: {
-          claimer: provider.wallet.publicKey,
-          claimerAta,
-          game,
-          gameTreasuryAta,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      })
-    );
-    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
-    fetchData();
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+  
+      const transaction = new Transaction();
+      const mint = gameData.tokenMint;
+      const claimerAta = await getAta(mint, provider.wallet.publicKey);
+      const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
+      if (instruction) transaction.add(instruction);
+      const gameTreasuryAta = await getAta(mint, game, true);
+      transaction.add(
+        program.transaction.withdraw(new anchor.BN(LAMPORTS_PER_SOL * withdrawAmount), {
+          accounts: {
+            claimer: provider.wallet.publicKey,
+            claimerAta,
+            game,
+            gameTreasuryAta,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          },
+        })
+      );
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchData();
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
   }
 
   async function updateBackendWallet() {
-    const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-    const transaction = new Transaction();
-
-    transaction.add(
-      program.transaction.setBackendWallet(new PublicKey(backendWallet), {
-        accounts: {
-          payer: provider.wallet.publicKey,
-          game,
-        },
-      })
-    );
-    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
-    fetchData();
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+      const transaction = new Transaction();
+  
+      transaction.add(
+        program.transaction.setBackendWallet(new PublicKey(backendWallet), {
+          accounts: {
+            payer: provider.wallet.publicKey,
+            game,
+          },
+        })
+      );
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchData();
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
   }
 
   async function fund() {
-    const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-    const transaction = new Transaction();
-    const mint = gameData.tokenMint;
-
-    const funderAta = await getAta(mint, provider.wallet.publicKey);
-    const gameTreasuryAta = await getAta(mint, game, true);
-    let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
-    if (instruction) transaction.add(instruction);
-    if (mint.toString() === NATIVE_MINT.toString()) {
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+      const transaction = new Transaction();
+      const mint = gameData.tokenMint;
+  
+      const funderAta = await getAta(mint, provider.wallet.publicKey);
+      const gameTreasuryAta = await getAta(mint, game, true);
+      let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
+      if (instruction) transaction.add(instruction);
+      if (mint.toString() === NATIVE_MINT.toString()) {
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: provider.wallet.publicKey,
+            toPubkey: funderAta,
+            lamports: fundAmount * LAMPORTS_PER_SOL,
+          }),
+          createSyncNativeInstruction(funderAta)
+        );
+      }
       transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: provider.wallet.publicKey,
-          toPubkey: funderAta,
-          lamports: fundAmount * LAMPORTS_PER_SOL,
-        }),
-        createSyncNativeInstruction(funderAta)
+        program.transaction.fund(new anchor.BN(LAMPORTS_PER_SOL * fundAmount), {
+          accounts: {
+            payer: provider.wallet.publicKey,
+            payerAta: funderAta,
+            game,
+            gameTreasuryAta,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          },
+        })
       );
+  
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchData();
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
     }
-    transaction.add(
-      program.transaction.fund(new anchor.BN(LAMPORTS_PER_SOL * fundAmount), {
-        accounts: {
-          payer: provider.wallet.publicKey,
-          payerAta: funderAta,
-          game,
-          gameTreasuryAta,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      })
-    );
-
-    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
-    await provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
-    fetchData();
   }
 
   async function deposit() {
@@ -356,13 +387,21 @@ export default function PlinkoPage() {
       <div className="ml-5 flex gap-2 flex-col ">
         <StorageSelect itemkey="Plinko-programId" label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
         <StorageSelect itemkey="Plinko-gamename" label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
-        <div>
-          <input type="radio" id="sol" name="token_type" checked={newTokenType === false} onChange={() => setNewTokenType(false)} />
-          <label htmlFor="sol">SOL</label>
-          <br />
-          <input type="radio" id="skt" name="token_type" checked={newTokenType === true} onChange={() => setNewTokenType(true)} />
-          <label htmlFor="skt">$SKT</label>
-          <br />
+        <div className="flex gap-2 items-center">
+          <p>Token Name:</p>
+          <select
+            className="border-2 border-black p-2"
+            onChange={(e) => {
+              setNewTokenMint(e.target.value);
+            }}
+            value={newTokenMint}
+          >
+            {tokens.map((token) => (
+              <option value={token.address} key={token.address}>
+                {token.symbol}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex gap-2 items-center">
           <div>
@@ -404,7 +443,7 @@ export default function PlinkoPage() {
                 }}
                 value={`${fundAmount}`}
               />
-              {tokenType ? "$SKT" : "SOL"}
+              {tokenSymbol}
             </div>
             <button className="border-2 border-black p-2" onClick={fund}>
               Fund
@@ -431,7 +470,7 @@ export default function PlinkoPage() {
                 }}
                 value={`${withdrawAmount}`}
               />
-              {tokenType ? "$SKT" : "SOL"}
+              {tokenSymbol}
             </div>
             <button className="border-2 border-black p-2" onClick={withdraw}>
               Withdraw Main Balance
@@ -440,7 +479,7 @@ export default function PlinkoPage() {
         )}        
         {!!gameData && (
           <div>
-            Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenType ? "$SKT" : "SOL"}
+            Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenSymbol}
           </div>
         )}
       </div>

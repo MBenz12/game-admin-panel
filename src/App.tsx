@@ -7,6 +7,7 @@ import "App.css";
 import { useMemo, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import Router from "routes";
+import 'react-toastify/dist/ReactToastify.css';
 require("@solana/wallet-adapter-react-ui/styles.css");
 
 function App() {
