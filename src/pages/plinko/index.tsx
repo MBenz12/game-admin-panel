@@ -275,13 +275,91 @@ export default function PlinkoPage() {
     fetchData();
   }
 
+  // async function claim() {
+  //   if (!wallet.signTransaction || !wallet.publicKey) return;
+    
+  //   const claimAmount = 0.1; // get from backend
+
+  //   const { provider, program } = getProviderAndProgram();
+  //   const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+  //   const mint = gameData.tokenMint;
+
+  //   const transaction = new Transaction();
+
+  //   const claimerAta = await getAta(mint, provider.wallet.publicKey);
+  //   const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
+  //   if (instruction) transaction.add(instruction);
+  //   const gameTreasuryAta = await getAta(mint, game, true);
+  //   console.log("Backend Wallet:", backendWallet);
+  //   transaction.add(
+  //     program.transaction.claim(new anchor.BN(claimAmount * LAMPORTS_PER_SOL), {
+  //       accounts: {
+  //         claimer: provider.wallet.publicKey,
+  //         backend: new PublicKey(backendWallet),
+  //         claimerAta,
+  //         game,
+  //         gameTreasuryAta,
+  //         tokenProgram: TOKEN_PROGRAM_ID,
+  //       },
+  //     })
+  //   );
+  //   if (mint.toString() === NATIVE_MINT.toString()) {
+  //     transaction.add(createCloseAccountInstruction(claimerAta, provider.wallet.publicKey, provider.wallet.publicKey));
+  //   }
+    
+  //   transaction.feePayer = wallet.publicKey;
+  //   transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
+
+  //   const signedTx = await wallet.signTransaction(transaction);
+  //   console.log("Transaction made by FE:", signedTx);
+  //   const serializedBuffer = signedTx.serialize({ requireAllSignatures: false }).toString("base64");
+  //   // Send serialized buffer
+
+  //   // Backend Part
+  //   const recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
+  //   console.log("Transaction recovered by BE: ", recoveredTx);
+  //   const programInstructions = recoveredTx.instructions.filter(instruction => instruction.programId.toString() === idl_plinko.metadata.address);
+  //   const claimInstruction = programInstructions[0];
+  //   const amountBytes = claimInstruction.data.slice(8).reverse();
+  //   const amount = new anchor.BN(amountBytes);
+  //   console.log("Claim amount: ", amount.toString());
+  //   if (amount.toNumber() !== LAMPORTS_PER_SOL * claimAmount) return;
+  //   console.log("Recovered Transaction Correctly!");
+
+  //   const backendKP = Keypair.fromSecretKey(bs58.decode("3VDsp2mphhxaHXFYJQsHEcEQG3ahKBGw5xJ3AoMv25h8aQh7YZqjjKYUTYH4QfFufTkJKcRaPGZJ68NW3ujWoBav"));
+  //   console.log(backendKP.publicKey.toString());
+  //   recoveredTx.partialSign(backendKP);
+  //   // recoveredTx.sign(backendKP);
+  //   const claimerSignature = recoveredTx.signatures[0];
+  //   const realDataNeedToSign = recoveredTx.serializeMessage();
+  //   console.log(claimerSignature.signature);
+  //   let verifyAliceSignatureResult = nacl.sign.detached.verify(
+  //     realDataNeedToSign,
+  //     new Uint8Array(claimerSignature.signature as Buffer),
+  //     claimerSignature.publicKey.toBytes()
+  //   );
+  //   console.log(`verify claimer signature: ${verifyAliceSignatureResult}`);
+  //   // console.log(transaction.serializeMessage(), realDataNeedToSign);
+  //   const beSignature = nacl.sign.detached(realDataNeedToSign, backendKP.secretKey);
+  //   recoveredTx.addSignature(backendKP.publicKey, Buffer.from(beSignature));
+    
+  //   console.log(recoveredTx);
+  //   const txSignature = await program.provider.connection.sendRawTransaction(recoveredTx.serialize());
+  //   await program.provider.connection.confirmTransaction(txSignature, "confirmed");
+  //   console.log(txSignature);
+  //   // fetchData();
+  // }
+
   async function claim() {
     if (!wallet.signTransaction || !wallet.publicKey) return;
     
-    const claimAmount = 0.1; // get from backend
-
+    // Front End
     const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    const claimer = provider.wallet.publicKey;
+
+    // Backend
+    const claimAmount = 0.1; 
+    const [game] = await getGameAddress(program.programId, gamename, claimer);
     const mint = gameData.tokenMint;
 
     const transaction = new Transaction();
@@ -294,7 +372,7 @@ export default function PlinkoPage() {
     transaction.add(
       program.transaction.claim(new anchor.BN(claimAmount * LAMPORTS_PER_SOL), {
         accounts: {
-          claimer: provider.wallet.publicKey,
+          claimer,
           backend: new PublicKey(backendWallet),
           claimerAta,
           game,
@@ -304,50 +382,36 @@ export default function PlinkoPage() {
       })
     );
     if (mint.toString() === NATIVE_MINT.toString()) {
-      transaction.add(createCloseAccountInstruction(claimerAta, provider.wallet.publicKey, provider.wallet.publicKey));
+      transaction.add(createCloseAccountInstruction(claimerAta, claimer, claimer));
     }
     
-    transaction.feePayer = wallet.publicKey;
+    transaction.feePayer = claimer;
     transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
-
-    const signedTx = await wallet.signTransaction(transaction);
-    console.log("Transaction made by FE:", signedTx);
-    const serializedBuffer = signedTx.serialize({ requireAllSignatures: false }).toString("base64");
-    // Send serialized buffer
-
-    // Backend Part
-    const recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
-    console.log("Transaction recovered by BE: ", recoveredTx);
-    const programInstructions = recoveredTx.instructions.filter(instruction => instruction.programId.toString() === idl_plinko.metadata.address);
-    const claimInstruction = programInstructions[0];
-    const amountBytes = claimInstruction.data.slice(8).reverse();
-    const amount = new anchor.BN(amountBytes);
-    console.log("Claim amount: ", amount.toString());
-    if (amount.toNumber() !== LAMPORTS_PER_SOL * claimAmount) return;
-    console.log("Recovered Transaction Correctly!");
 
     const backendKP = Keypair.fromSecretKey(bs58.decode("3VDsp2mphhxaHXFYJQsHEcEQG3ahKBGw5xJ3AoMv25h8aQh7YZqjjKYUTYH4QfFufTkJKcRaPGZJ68NW3ujWoBav"));
     console.log(backendKP.publicKey.toString());
-    recoveredTx.partialSign(backendKP);
-    // recoveredTx.sign(backendKP);
-    const claimerSignature = recoveredTx.signatures[0];
-    const realDataNeedToSign = recoveredTx.serializeMessage();
-    console.log(claimerSignature.signature);
-    let verifyAliceSignatureResult = nacl.sign.detached.verify(
-      realDataNeedToSign,
-      new Uint8Array(claimerSignature.signature as Buffer),
-      claimerSignature.publicKey.toBytes()
-    );
-    console.log(`verify claimer signature: ${verifyAliceSignatureResult}`);
-    // console.log(transaction.serializeMessage(), realDataNeedToSign);
-    const beSignature = nacl.sign.detached(realDataNeedToSign, backendKP.secretKey);
-    recoveredTx.addSignature(backendKP.publicKey, Buffer.from(beSignature));
-    
-    console.log(recoveredTx);
+
+    console.log("Transaction made by BE:", transaction);
+    transaction.partialSign(backendKP);
+    console.log("Partial Signed Transaction by BE Keypair:", transaction);
+    let serializedBuffer = transaction.serialize({ requireAllSignatures: false }).toString("base64");
+    // Send serialized buffer
+
+    // Frontend Part
+    let recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
+    console.log("Transaction recovered by FE: ", recoveredTx);
+    const signedTx = await wallet.signTransaction(recoveredTx);
+    console.log("Transaction Signed by FE:", signedTx);
+    serializedBuffer = signedTx.serialize().toString("base64");
+
+    // Backend Part
+    recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
     const txSignature = await program.provider.connection.sendRawTransaction(recoveredTx.serialize());
     await program.provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
-    // fetchData();
+
+    
+    fetchData();
   }
   useEffect(() => {
     fetchData();
