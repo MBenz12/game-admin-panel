@@ -3,7 +3,8 @@ import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } fr
 import { PublicKey } from "@solana/web3.js";
 
 export const plinko_pda_seed = "plinko_game_pda";
-
+export const JWT_TOKEN = "plinko-game";
+export const JWT_EXPIRES_IN = 3600 * 24;
 export const game_name = "test1";
 export const game_owner = new PublicKey("3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd");
 export const default_backend = new PublicKey("SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ");

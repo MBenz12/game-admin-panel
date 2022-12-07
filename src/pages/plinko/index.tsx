@@ -7,6 +7,7 @@ import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import axios from "axios";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
@@ -15,7 +16,8 @@ import { Plinko } from "idl/plinko";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as nacl from "tweetnacl";
-import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress } from "./utils";
+import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress, JWT_EXPIRES_IN, JWT_TOKEN } from "./utils";
+import jwt from "jsonwebtoken";
 
 const idl_plinko = require("idl/plinko.json");
 const deafultProgramIDs = [idl_plinko.metadata.address];
@@ -50,7 +52,8 @@ export default function PlinkoPage() {
   const [tokenMint, setTokenMint] = useState(NATIVE_MINT.toString());
   const [newTokenMint, setNewTokenMint] = useState(NATIVE_MINT.toString());
   const [backendWallet, setBackendWallet] = useState(default_backend.toString());
-
+  const [multiplier, setMultiplier] = useState<any>();
+  const [chance, setChance] = useState<any>();
   const tokens = [
     { symbol: 'SOL', address: NATIVE_MINT.toString() },
     { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
@@ -100,7 +103,76 @@ export default function PlinkoPage() {
     }
   }
 
+  function updateAccessToken(token: string) {
+    if (token) {
+      localStorage.setItem("accessToken", token);
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      localStorage.removeItem('accessToken');
+      delete axios.defaults.headers.common.Authorization;
+    }
+  }
+
+  async function getSignedMessage() {
+    if (wallet.signMessage && wallet.publicKey) {
+      const message = "I am an authorized admin wallet.";
+      const signature = await wallet.signMessage(new Uint8Array(Buffer.from(message)));
+      
+      return { message, signature, wallet: wallet.publicKey.toString() };
+    }
+  }
+
+  async function getSettings() {
+    if (!wallet.signMessage || !wallet.publicKey) return;
+
+    try {
+      let token = localStorage.getItem('accessToken');
+      console.log(token);
+      if (!token) {
+        const payload = await getSignedMessage();
+        if (payload) {
+          updateAccessToken(jwt.sign(payload, JWT_TOKEN, { expiresIn: JWT_EXPIRES_IN }));
+        }      
+      } else {
+        const { payload } = jwt.verify(token, JWT_TOKEN, { complete: true });
+        updateAccessToken(token);
+        // @ts-ignore
+        if (!payload || payload && payload.wallet !== wallet.publicKey.toString()) {
+          const newPayload = await getSignedMessage();
+          if (newPayload) {
+            updateAccessToken(jwt.sign(newPayload, JWT_TOKEN, { expiresIn: JWT_EXPIRES_IN }));
+          }
+        }
+      }
+      
+      const { data } = await axios.get('http://localhost:5001/settings/admin');
+      if (data) {
+        const { multiplier, chance } = data;
+        setMultiplier(multiplier);
+        setChance(chance);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error('Unauthorized Wallet');
+    }
+  }
+
+  async function setSettings() {
+    try {
+      let token = localStorage.getItem('accessToken');
+      if (token) {
+        updateAccessToken(token);
+        await axios.post('http://localhost:5001/settings/admin', { multiplier, chance });
+      }
+      toast.success("Settings Updated Successfully");
+    } catch (error) {
+      console.log(error);
+      toast.error('Unauthorized Wallet');
+    }
+  }
+
   async function fetchData() {
+    getSettings();
     const { provider, program } = getProviderAndProgram();
     if (!provider.wallet) return;
 
@@ -413,6 +485,20 @@ export default function PlinkoPage() {
     
     fetchData();
   }
+
+  async function signMessage() {
+    if (wallet.signMessage && wallet.publicKey) {
+      // Sign in FE
+      const message = "Signing Message";
+      const signature = await wallet.signMessage(new Uint8Array(Buffer.from(message)));
+      console.log(signature);
+
+      // Verify in BE
+      const clientKey = wallet.publicKey;
+      const verified = nacl.sign.detached.verify(new Uint8Array(Buffer.from(message)), signature, clientKey.toBytes());
+      console.log(verified);
+    }
+  }
   useEffect(() => {
     fetchData();
   }, [wallet.connected, gamename, network, programID]);
@@ -518,6 +604,9 @@ export default function PlinkoPage() {
             <button className="border-2 border-black p-2" onClick={claim}>
               Claim through Backend
             </button>
+            <button className="border-2 border-black p-2" onClick={signMessage}>
+              Sign Message
+            </button>
           </div>
         )}
         {!!gameData && (
@@ -546,6 +635,56 @@ export default function PlinkoPage() {
             Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenSymbol}
           </div>
         )}
+        <div className="flex flex-col gap-2">
+          <p className="text-[20px]">Settings</p>
+          {(multiplier && chance) && (
+            Object.keys(multiplier).map((key => (
+              <div key={key} className="flex items-center gap-2 border border-black w-fit p-2">
+                <p className="w-[50px]">{key}</p>               
+                <div className="flex flex-col gap-2">
+                  {multiplier[key] && multiplier[key].map((vals: number[], i: number) => (
+                    <div key={key + i} className="flex gap-1 items-center">
+                      <p className="w-[70px]">{[8, 12, 16][i]}Lines</p>
+                      {vals && vals.map((val: number, j) => (
+                        <div key={key + i + j} className="flex flex-col gap-1 ">
+                          <input 
+                            className="border border-black p-1 w-[55px]"
+                            type={"number"}
+                            min={0}
+                            step={0.1}
+                            value={val}
+                            onChange={(e) => {
+                              const newMultiplier = JSON.parse(JSON.stringify(multiplier));
+                              newMultiplier[key][i][j] = parseFloat(e.target.value) || 0;
+                              setMultiplier(newMultiplier);
+                            }}
+                          />
+                          <input 
+                            className="border border-black p-1 w-[55px]"
+                            type={"number"}
+                            min={0}
+                            step={0.1}
+                            value={(chance[key][i][j] || 0) / 100}
+                            onChange={(e) => {
+                              const newChance = JSON.parse(JSON.stringify(chance));
+                              newChance[key][i][j] = (parseFloat(e.target.value) || 0) * 100;
+                              setChance(newChance);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )))
+          )}
+          <div>
+            <button className="border-2 border-black p-2" onClick={setSettings}>
+              Save Settings
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
