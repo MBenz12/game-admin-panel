@@ -27,11 +27,9 @@ export default function PlinkoPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET, "confirmed"), [network]);
   const [programID, setProgramID] = useState(idl_plinko.metadata.address);
-  useEffect(() =>
-  {
+  useEffect(() => {
     const network = localStorage.getItem("network");
-    if (network)
-    {
+    if (network) {
       setNetwork(network as WalletAdapterNetwork);
     }
   }, []);
@@ -59,12 +57,17 @@ export default function PlinkoPage() {
     { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
     { symbol: 'FORGE', address: SPLTOKENS_MAP.get(eCurrencyType.FORGE) },
     { symbol: 'DUST', address: SPLTOKENS_MAP.get(eCurrencyType.DUST) },
-    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },    
+    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },
   ];
 
-  const [tokenSymbol, setTokenSymbol] = useState('SOL'); 
+  const [tokenSymbol, setTokenSymbol] = useState('SOL');
 
   const [gamename, setGamename] = useState(game_name);
+
+  const [lineCount, setLineCount] = useState(8);
+  const [risk, setRisk] = useState('Low');
+  const [ballCount, setBallCount] = useState(1);
+  const [betAmount, setBetAmount] = useState(1);
 
   async function initGame() {
     try {
@@ -72,17 +75,17 @@ export default function PlinkoPage() {
       const [game, game_bump] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const mint = new PublicKey(newTokenMint);
       const transaction = new Transaction();
-  
+
       console.log("Init Game:");
       console.log("ProgramId:", program.programId.toString());
       console.log("Mint Address:", mint.toString());
-  
+
       const gameTreasuryAta = await getAta(mint, game, true);
-  
+
       let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
       if (instruction) transaction.add(instruction);
-  
-  
+
+
       transaction.add(
         program.transaction.createGame(gamename, game_bump, mint, new PublicKey(backendWallet), {
           accounts: {
@@ -117,7 +120,7 @@ export default function PlinkoPage() {
     if (wallet.signMessage && wallet.publicKey) {
       const message = "I am an authorized admin wallet.";
       const signature = await wallet.signMessage(new Uint8Array(Buffer.from(message)));
-      
+
       return { message, signature, wallet: wallet.publicKey.toString() };
     }
   }
@@ -132,7 +135,7 @@ export default function PlinkoPage() {
         const payload = await getSignedMessage();
         if (payload) {
           updateAccessToken(jwt.sign(payload, JWT_TOKEN, { expiresIn: JWT_EXPIRES_IN }));
-        }      
+        }
       } else {
         const { payload } = jwt.verify(token, JWT_TOKEN, { complete: true });
         updateAccessToken(token);
@@ -144,7 +147,7 @@ export default function PlinkoPage() {
           }
         }
       }
-      
+
       const { data } = await axios.get('http://localhost:5001/settings/admin');
       if (data) {
         const { multiplier, chance } = data;
@@ -165,6 +168,22 @@ export default function PlinkoPage() {
         await axios.post('http://localhost:5001/settings/admin', { multiplier, chance });
       }
       toast.success("Settings Updated Successfully");
+    } catch (error) {
+      console.log(error);
+      toast.error('Unauthorized Wallet');
+    }
+  }
+
+  async function play() {
+    if (!wallet.publicKey) return;
+    try {
+      let token = localStorage.getItem('accessToken');
+      if (token) {
+        updateAccessToken(token);
+        const { data } = await axios.post('http://localhost:5001/game/play', { lines: lineCount, risk, betValue: betAmount, ballCount, wallet: wallet?.publicKey.toString() });
+        console.log(data);
+      }
+      toast.success("Played Successfully");
     } catch (error) {
       console.log(error);
       toast.error('Unauthorized Wallet');
@@ -199,7 +218,7 @@ export default function PlinkoPage() {
     try {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-  
+
       const transaction = new Transaction();
       const mint = gameData.tokenMint;
       const claimerAta = await getAta(mint, provider.wallet.publicKey);
@@ -233,7 +252,7 @@ export default function PlinkoPage() {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const transaction = new Transaction();
-  
+
       transaction.add(
         program.transaction.setBackendWallet(new PublicKey(backendWallet), {
           accounts: {
@@ -259,7 +278,7 @@ export default function PlinkoPage() {
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const transaction = new Transaction();
       const mint = gameData.tokenMint;
-  
+
       const funderAta = await getAta(mint, provider.wallet.publicKey);
       const gameTreasuryAta = await getAta(mint, game, true);
       let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
@@ -285,7 +304,7 @@ export default function PlinkoPage() {
           },
         })
       );
-  
+
       const txSignature = await wallet.sendTransaction(transaction, provider.connection);
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
@@ -349,7 +368,7 @@ export default function PlinkoPage() {
 
   // async function claim() {
   //   if (!wallet.signTransaction || !wallet.publicKey) return;
-    
+
   //   const claimAmount = 0.1; // get from backend
 
   //   const { provider, program } = getProviderAndProgram();
@@ -378,7 +397,7 @@ export default function PlinkoPage() {
   //   if (mint.toString() === NATIVE_MINT.toString()) {
   //     transaction.add(createCloseAccountInstruction(claimerAta, provider.wallet.publicKey, provider.wallet.publicKey));
   //   }
-    
+
   //   transaction.feePayer = wallet.publicKey;
   //   transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
 
@@ -414,7 +433,7 @@ export default function PlinkoPage() {
   //   // console.log(transaction.serializeMessage(), realDataNeedToSign);
   //   const beSignature = nacl.sign.detached(realDataNeedToSign, backendKP.secretKey);
   //   recoveredTx.addSignature(backendKP.publicKey, Buffer.from(beSignature));
-    
+
   //   console.log(recoveredTx);
   //   const txSignature = await program.provider.connection.sendRawTransaction(recoveredTx.serialize());
   //   await program.provider.connection.confirmTransaction(txSignature, "confirmed");
@@ -424,13 +443,13 @@ export default function PlinkoPage() {
 
   async function claim() {
     if (!wallet.signTransaction || !wallet.publicKey) return;
-    
+
     // Front End
     const { provider, program } = getProviderAndProgram();
     const claimer = provider.wallet.publicKey;
 
     // Backend
-    const claimAmount = 0.1; 
+    const claimAmount = 0.1;
     const [game] = await getGameAddress(program.programId, gamename, claimer);
     const mint = gameData.tokenMint;
 
@@ -456,7 +475,7 @@ export default function PlinkoPage() {
     if (mint.toString() === NATIVE_MINT.toString()) {
       transaction.add(createCloseAccountInstruction(claimerAta, claimer, claimer));
     }
-    
+
     transaction.feePayer = claimer;
     transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
 
@@ -482,7 +501,7 @@ export default function PlinkoPage() {
     await program.provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
 
-    
+
     fetchData();
   }
 
@@ -563,7 +582,7 @@ export default function PlinkoPage() {
               }}
               value={backendWallet}
             />
-          </div>          
+          </div>
           {!!gameData && (
             <>
               <button className="border-2 border-black p-2" onClick={updateBackendWallet}>
@@ -577,7 +596,7 @@ export default function PlinkoPage() {
             <button className="border-2 border-black p-2" onClick={initGame}>
               Init Game
             </button>
-          )}                    
+          )}
         </div>
         {!!gameData && (
           <div className="flex gap-2">
@@ -629,7 +648,7 @@ export default function PlinkoPage() {
               Withdraw Main Balance
             </button>
           </div>
-        )}        
+        )}
         {!!gameData && (
           <div>
             Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenSymbol}
@@ -640,14 +659,14 @@ export default function PlinkoPage() {
           {(multiplier && chance) && (
             Object.keys(multiplier).map((key => (
               <div key={key} className="flex items-center gap-2 border border-black w-fit p-2">
-                <p className="w-[50px]">{key}</p>               
+                <p className="w-[50px]">{key}</p>
                 <div className="flex flex-col gap-2">
                   {multiplier[key] && multiplier[key].map((vals: number[], i: number) => (
                     <div key={key + i} className="flex gap-1 items-center">
                       <p className="w-[70px]">{[8, 12, 16][i]}Lines</p>
                       {vals && vals.map((val: number, j) => (
                         <div key={key + i + j} className="flex flex-col gap-1 ">
-                          <input 
+                          <input
                             className="border border-black p-1 w-[55px]"
                             type={"number"}
                             min={0}
@@ -659,7 +678,7 @@ export default function PlinkoPage() {
                               setMultiplier(newMultiplier);
                             }}
                           />
-                          <input 
+                          <input
                             className="border border-black p-1 w-[55px]"
                             type={"number"}
                             min={0}
@@ -684,6 +703,69 @@ export default function PlinkoPage() {
               Save Settings
             </button>
           </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <p>Lines:</p>
+            <select
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setLineCount(parseInt(e.target.value));
+              }}
+              value={lineCount}
+            >
+              {[8, 12, 16].map((count) => (
+                <option value={count} key={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2 items-center">
+            <p>Risk:</p>
+            <select
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setRisk(e.target.value);
+              }}
+              value={risk}
+            >
+              {['Low', 'Middle', 'High'].map((item) => (
+                <option value={item} key={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-1 items-center">
+            Bet Amount:
+            <input
+              className="border-2 border-black p-2 w-[60px]"
+              type={"number"}
+              min={0}
+              step={0.01}
+              onChange={(e) => {
+                setBetAmount(parseFloat(e.target.value || "0"));
+              }}
+              value={`${betAmount}`}
+            />$
+          </div>
+          <div className="flex gap-1 items-center">
+            Ball Count:
+            <input
+              className="border-2 border-black p-2 w-[60px]"
+              type={"number"}
+              min={0}
+              step={0.01}
+              onChange={(e) => {
+                setBallCount(parseFloat(e.target.value || "0"));
+              }}
+              value={`${ballCount}`}
+            />
+          </div>
+          <button className="border-2 border-black p-2" onClick={play}>
+            Play
+          </button>
         </div>
       </div>
     </div>
