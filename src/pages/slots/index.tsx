@@ -9,7 +9,7 @@ import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCT
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
-import { isAdmin } from "config/utils";
+import { getSolBalance, isAdmin } from "config/utils";
 import { Slots } from "idl/slots";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -308,7 +308,12 @@ export default function SlotsPage() {
       setCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
       setNewCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
       setNewRoyalties(gameData.royalties.map((royalty) => royalty / 100));
-      setCommunityBalances(gameData.communityBalances.map((balance) => balance.toNumber()));
+      // setCommunityBalances(gameData.communityBalances.map((balance) => balance.toNumber()));
+      const balances: number[] = [];
+      for (const communityWallet of gameData.communityWallets) {
+        balances.push(await getSolBalance(provider.connection, communityWallet));
+      }
+      setCommunityBalances(balances);
       setGameBalance(gameData.mainBalance.toNumber());
       setJackpot(gameData.jackpot.toNumber() / LAMPORTS_PER_SOL);
       setCommissionFee(gameData.commissionFee / 100);
@@ -649,7 +654,7 @@ export default function SlotsPage() {
             </div>
             {communityBalances.length > index && (
               <div>
-                Balance: {communityBalances[index] / LAMPORTS_PER_SOL} {tokenSymbol}
+                Balance: {communityBalances[index]} {tokenSymbol}
               </div>
             )}
 

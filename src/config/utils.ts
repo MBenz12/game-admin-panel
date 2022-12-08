@@ -1,7 +1,7 @@
 import { Metaplex } from "@metaplex-foundation/js";
 import * as anchor from '@project-serum/anchor';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import { adminWallets } from "./constants";
 
 export const getNetworkFromConnection = (connection: Connection): string => {
@@ -76,4 +76,43 @@ export enum eInstructionsType {
 
 export const isAdmin = (pubkey: PublicKey) => {
     return adminWallets.includes(pubkey.toString())
+}
+
+export const getSolBalance = async (solConnection: Connection, wallet: PublicKey) =>
+{
+    return await getSolBalanceUnWrapped(solConnection, wallet) + await getSolBalanceWrapped(solConnection, wallet);
+};
+
+export const getSolBalanceUnWrapped = async (solConnection: Connection, wallet: PublicKey) =>
+{
+      try
+      {
+        const balance = await solConnection.getBalance(wallet);
+        return balance / LAMPORTS_PER_SOL;
+      }
+      catch (error)
+      {
+        console.log(error);
+        return 0;
+      }
+};
+
+export const getSolBalanceWrapped = async(solConnection: Connection, wallet:PublicKey) =>
+{
+    try
+    {
+        const res =  await solConnection.getTokenAccountsByOwner(
+            wallet, // owner here
+            {
+                mint: new PublicKey("So11111111111111111111111111111111111111112"),
+            }
+        );
+
+        return res.value && res.value[0].account.lamports / LAMPORTS_PER_SOL;
+    }
+    catch (error)
+    {
+        console.log(error);
+        return 0;
+    }
 }
