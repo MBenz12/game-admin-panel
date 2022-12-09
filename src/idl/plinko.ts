@@ -31,10 +31,6 @@ export type Plinko = {
           "type": "u8"
         },
         {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
           "name": "backendWallet",
           "type": "publicKey"
         }
@@ -192,14 +188,6 @@ export type Plinko = {
           {
             "name": "bump",
             "type": "u8"
-          },
-          {
-            "name": "tokenMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "mainBalance",
-            "type": "u64"
           },
           {
             "name": "backendWallet",
@@ -251,10 +239,6 @@ export const IDL: Plinko = {
           "type": "u8"
         },
         {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
           "name": "backendWallet",
           "type": "publicKey"
         }
@@ -412,14 +396,6 @@ export const IDL: Plinko = {
           {
             "name": "bump",
             "type": "u8"
-          },
-          {
-            "name": "tokenMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "mainBalance",
-            "type": "u64"
           },
           {
             "name": "backendWallet",

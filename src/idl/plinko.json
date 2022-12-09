@@ -31,10 +31,6 @@
           "type": "u8"
         },
         {
-          "name": "tokenMint",
-          "type": "publicKey"
-        },
-        {
           "name": "backendWallet",
           "type": "publicKey"
         }
@@ -192,14 +188,6 @@
           {
             "name": "bump",
             "type": "u8"
-          },
-          {
-            "name": "tokenMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "mainBalance",
-            "type": "u64"
           },
           {
             "name": "backendWallet",

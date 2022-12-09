@@ -44,7 +44,7 @@ export default function PlinkoPage() {
   }
 
   const [gameData, setGameData] = useState<any>();
-  const [gameBalance, setGameBalance] = useState(0);
+  // const [gameBalance, setGameBalance] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [fundAmount, setFundAmount] = useState(0);
   const [tokenMint, setTokenMint] = useState(NATIVE_MINT.toString());
@@ -73,21 +73,20 @@ export default function PlinkoPage() {
     try {
       const { provider, program } = getProviderAndProgram();
       const [game, game_bump] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-      const mint = new PublicKey(newTokenMint);
       const transaction = new Transaction();
 
       console.log("Init Game:");
       console.log("ProgramId:", program.programId.toString());
-      console.log("Mint Address:", mint.toString());
 
-      const gameTreasuryAta = await getAta(mint, game, true);
-
-      let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
-      if (instruction) transaction.add(instruction);
-
-
+      
+      for (const token of tokens) {
+        const mint = new PublicKey(token.address || NATIVE_MINT.toString());
+        const gameTreasuryAta = await getAta(mint, game, true);
+        let instruction = await getCreateAtaInstruction(provider, gameTreasuryAta, mint, game);
+        if (instruction) transaction.add(instruction);        
+      }
       transaction.add(
-        program.transaction.createGame(gamename, game_bump, mint, new PublicKey(backendWallet), {
+        program.transaction.createGame(gamename, game_bump, new PublicKey(backendWallet), {
           accounts: {
             payer: provider.wallet.publicKey,
             game,
@@ -137,15 +136,19 @@ export default function PlinkoPage() {
           updateAccessToken(jwt.sign(payload, JWT_TOKEN, { expiresIn: JWT_EXPIRES_IN }));
         }
       } else {
-        const { payload } = jwt.verify(token, JWT_TOKEN, { complete: true });
-        updateAccessToken(token);
-        // @ts-ignore
-        if (!payload || payload && payload.wallet !== wallet.publicKey.toString()) {
+        try {
+          const { payload } = jwt.verify(token, JWT_TOKEN, { complete: true });
+          // @ts-ignore
+          if (!payload || payload && payload.wallet !== wallet.publicKey.toString()) {
+            throw "Token invalid or unahtorized wallet";
+          }
+          updateAccessToken(token);
+        } catch (error) {
           const newPayload = await getSignedMessage();
           if (newPayload) {
             updateAccessToken(jwt.sign(newPayload, JWT_TOKEN, { expiresIn: JWT_EXPIRES_IN }));
           }
-        }
+        }        
       }
 
       const { data } = await axios.get('http://localhost:5001/settings/admin');
@@ -180,7 +183,7 @@ export default function PlinkoPage() {
       let token = localStorage.getItem('accessToken');
       if (token) {
         updateAccessToken(token);
-        const { data } = await axios.post('http://localhost:5001/game/play', { lines: lineCount, risk, betValue: betAmount, ballCount, wallet: wallet?.publicKey.toString() });
+        const { data } = await axios.post('http://localhost:5001/game/play', { lines: lineCount, risk, betAmount, ballCount, tokenMint, wallet: wallet?.publicKey.toString() });
         console.log(data);
       }
       toast.success("Played Successfully");
@@ -206,10 +209,6 @@ export default function PlinkoPage() {
     // @ts-ignore
 
     if (gameData) {
-      setTokenMint(gameData.tokenMint.toString());
-      setTokenSymbol(tokens.filter(token => token.address === gameData.tokenMint.toString())[0].symbol);
-      setNewTokenMint(gameData.tokenMint.toString());
-      setGameBalance(gameData.mainBalance.toNumber());
       setBackendWallet(gameData.backendWallet.toString());
     }
   }
@@ -220,7 +219,7 @@ export default function PlinkoPage() {
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
 
       const transaction = new Transaction();
-      const mint = gameData.tokenMint;
+      const mint = new PublicKey(tokenMint);
       const claimerAta = await getAta(mint, provider.wallet.publicKey);
       const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
       if (instruction) transaction.add(instruction);
@@ -277,7 +276,7 @@ export default function PlinkoPage() {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const transaction = new Transaction();
-      const mint = gameData.tokenMint;
+      const mint = new PublicKey(tokenMint);
 
       const funderAta = await getAta(mint, provider.wallet.publicKey);
       const gameTreasuryAta = await getAta(mint, game, true);
@@ -322,7 +321,7 @@ export default function PlinkoPage() {
     const { provider, program } = getProviderAndProgram();
     const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
     const transaction = new Transaction();
-    const mint = gameData.tokenMint;
+    const mint = new PublicKey(tokenMint);
 
     const funderAta = await getAta(mint, provider.wallet.publicKey);
     const gameTreasuryAta = await getAta(mint, game, true);
@@ -357,12 +356,9 @@ export default function PlinkoPage() {
     console.log(signedTx.serialize());
 
     const serializedBuffer = signedTx.serialize().toString("base64");
-    // Send serialized buffer
-
-    // Backend Part
-    const txSignature = await program.provider.connection.sendRawTransaction(Buffer.from(serializedBuffer, "base64"));
-    await program.provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
+    
+    const { data } = await axios.post(`http://localhost:5001/transaction/deposit/${tokenMint}`, { serializedBuffer });
+    console.log(data);
     fetchData();
   }
 
@@ -448,46 +444,9 @@ export default function PlinkoPage() {
     const { provider, program } = getProviderAndProgram();
     const claimer = provider.wallet.publicKey;
 
-    // Backend
-    const claimAmount = 0.1;
-    const [game] = await getGameAddress(program.programId, gamename, claimer);
-    const mint = gameData.tokenMint;
-
-    const transaction = new Transaction();
-
-    const claimerAta = await getAta(mint, provider.wallet.publicKey);
-    const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
-    if (instruction) transaction.add(instruction);
-    const gameTreasuryAta = await getAta(mint, game, true);
-    console.log("Backend Wallet:", backendWallet);
-    transaction.add(
-      program.transaction.claim(new anchor.BN(claimAmount * LAMPORTS_PER_SOL), {
-        accounts: {
-          claimer,
-          backend: new PublicKey(backendWallet),
-          claimerAta,
-          game,
-          gameTreasuryAta,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      })
-    );
-    if (mint.toString() === NATIVE_MINT.toString()) {
-      transaction.add(createCloseAccountInstruction(claimerAta, claimer, claimer));
-    }
-
-    transaction.feePayer = claimer;
-    transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
-
-    const backendKP = Keypair.fromSecretKey(bs58.decode("3VDsp2mphhxaHXFYJQsHEcEQG3ahKBGw5xJ3AoMv25h8aQh7YZqjjKYUTYH4QfFufTkJKcRaPGZJ68NW3ujWoBav"));
-    console.log(backendKP.publicKey.toString());
-
-    console.log("Transaction made by BE:", transaction);
-    transaction.partialSign(backendKP);
-    console.log("Partial Signed Transaction by BE Keypair:", transaction);
-    let serializedBuffer = transaction.serialize({ requireAllSignatures: false }).toString("base64");
-    // Send serialized buffer
-
+    const { data } = await axios.get(`http://localhost:5001/transaction/claim/${tokenMint}`);
+    let serializedBuffer = data;
+    
     // Frontend Part
     let recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
     console.log("Transaction recovered by FE: ", recoveredTx);
@@ -496,11 +455,8 @@ export default function PlinkoPage() {
     serializedBuffer = signedTx.serialize().toString("base64");
 
     // Backend Part
-    recoveredTx = Transaction.from(Buffer.from(serializedBuffer, "base64"));
-    const txSignature = await program.provider.connection.sendRawTransaction(recoveredTx.serialize());
-    await program.provider.connection.confirmTransaction(txSignature, "confirmed");
-    console.log(txSignature);
-
+    const response = await axios.post(`http://localhost:5001/transaction/claim/${tokenMint}`, { serializedBuffer });
+    console.log(response.data);
 
     fetchData();
   }
@@ -649,11 +605,11 @@ export default function PlinkoPage() {
             </button>
           </div>
         )}
-        {!!gameData && (
+        {/* {!!gameData && (
           <div>
             Main Balance: {gameBalance / LAMPORTS_PER_SOL} {tokenSymbol}
           </div>
-        )}
+        )} */}
         <div className="flex flex-col gap-2">
           <p className="text-[20px]">Settings</p>
           {(multiplier && chance) && (
