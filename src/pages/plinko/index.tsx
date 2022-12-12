@@ -6,7 +6,7 @@ import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, NonceAccount, NONCE_ACCOUNT_LENGTH, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import axios from "axios";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
@@ -16,7 +16,7 @@ import { Plinko } from "idl/plinko";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as nacl from "tweetnacl";
-import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress, JWT_EXPIRES_IN, JWT_TOKEN } from "./utils";
+import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress, JWT_EXPIRES_IN, JWT_TOKEN, nonceAccountAuth, siteUrl } from "./utils";
 import jwt from "jsonwebtoken";
 
 const idl_plinko = require("idl/plinko.json");
@@ -47,6 +47,7 @@ export default function PlinkoPage() {
   // const [gameBalance, setGameBalance] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [fundAmount, setFundAmount] = useState(0);
+  const [claimAmount, setClaimAmount] = useState(0);
   const [tokenMint, setTokenMint] = useState(NATIVE_MINT.toString());
   const [newTokenMint, setNewTokenMint] = useState(NATIVE_MINT.toString());
   const [backendWallet, setBackendWallet] = useState(default_backend.toString());
@@ -68,6 +69,7 @@ export default function PlinkoPage() {
   const [risk, setRisk] = useState('Low');
   const [ballCount, setBallCount] = useState(1);
   const [betAmount, setBetAmount] = useState(1);
+  // const [nonceAccountAuth, setNonceAccountAuth] = useState("3dffPTxb7f5tAkwN9yyAj7A4xNcbjFgKoYxv6Ubtxswu");
 
   async function initGame() {
     try {
@@ -151,7 +153,7 @@ export default function PlinkoPage() {
         }        
       }
 
-      const { data } = await axios.get('http://localhost:5001/settings/admin');
+      const { data } = await axios.get(`${siteUrl}/settings/admin`);
       if (data) {
         const { multiplier, chance } = data;
         setMultiplier(multiplier);
@@ -168,7 +170,7 @@ export default function PlinkoPage() {
       let token = localStorage.getItem('accessToken');
       if (token) {
         updateAccessToken(token);
-        await axios.post('http://localhost:5001/settings/admin', { multiplier, chance });
+        await axios.post(`${siteUrl}/settings/admin`, { multiplier, chance });
       }
       toast.success("Settings Updated Successfully");
     } catch (error) {
@@ -183,7 +185,7 @@ export default function PlinkoPage() {
       let token = localStorage.getItem('accessToken');
       if (token) {
         updateAccessToken(token);
-        const { data } = await axios.post('http://localhost:5001/game/play', { lines: lineCount, risk, betAmount, ballCount, tokenMint, wallet: wallet?.publicKey.toString() });
+        const { data } = await axios.post(`${siteUrl}/game/play`, { lines: lineCount, risk, betAmount, ballCount, tokenMint, wallet: wallet?.publicKey.toString() });
         console.log(data);
       }
       toast.success("Played Successfully");
@@ -318,48 +320,67 @@ export default function PlinkoPage() {
   async function deposit() {
     if (!wallet.signTransaction || !wallet.publicKey) return;
 
-    const { provider, program } = getProviderAndProgram();
-    const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-    const transaction = new Transaction();
-    const mint = new PublicKey(tokenMint);
-
-    const funderAta = await getAta(mint, provider.wallet.publicKey);
-    const gameTreasuryAta = await getAta(mint, game, true);
-    let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
-    if (instruction) transaction.add(instruction);
-    if (mint.toString() === NATIVE_MINT.toString()) {
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+      const transaction = new Transaction();
+      const mint = new PublicKey(tokenMint);
+      const response = await axios.get(`${siteUrl}/config/nonceAccount`);
+      const nonceAccount = new PublicKey(response.data);
       transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: provider.wallet.publicKey,
-          toPubkey: funderAta,
-          lamports: fundAmount * LAMPORTS_PER_SOL,
+        SystemProgram.nonceAdvance({
+          noncePubkey: nonceAccount,
+          authorizedPubkey: nonceAccountAuth.publicKey,
         }),
-        createSyncNativeInstruction(funderAta)
+      )
+      const funderAta = await getAta(mint, provider.wallet.publicKey);
+      const gameTreasuryAta = await getAta(mint, game, true);
+      let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
+      if (instruction) transaction.add(instruction);
+      if (mint.toString() === NATIVE_MINT.toString()) {
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: provider.wallet.publicKey,
+            toPubkey: funderAta,
+            lamports: fundAmount * LAMPORTS_PER_SOL,
+          }),
+          createSyncNativeInstruction(funderAta)
+        );
+      }
+      transaction.add(
+        program.transaction.fund(new anchor.BN(LAMPORTS_PER_SOL * fundAmount), {
+          accounts: {
+            payer: provider.wallet.publicKey,
+            payerAta: funderAta,
+            game,
+            gameTreasuryAta,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          },
+        })
       );
+  
+      transaction.feePayer = wallet.publicKey;
+      let accountInfo = await connection.getAccountInfo(nonceAccount);
+      if (!accountInfo) throw "Cannot find nonce account";
+      let nonceAccountData = NonceAccount.fromAccountData(accountInfo.data);
+  
+      transaction.recentBlockhash = nonceAccountData.nonce;
+      // transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
+      transaction.sign(nonceAccountAuth);
+      const signedTx = await wallet.signTransaction(transaction);
+      console.log(signedTx.serialize());
+  
+      const serializedBuffer = signedTx.serialize().toString("base64");
+      
+      const { data } = await axios.post(`${siteUrl}/transaction/deposit/${tokenMint}`, { serializedBuffer });
+      console.log(data);
+      fetchData();
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
     }
-    transaction.add(
-      program.transaction.fund(new anchor.BN(LAMPORTS_PER_SOL * fundAmount), {
-        accounts: {
-          payer: provider.wallet.publicKey,
-          payerAta: funderAta,
-          game,
-          gameTreasuryAta,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      })
-    );
 
-    transaction.feePayer = wallet.publicKey;
-    transaction.recentBlockhash = (await program.provider.connection.getLatestBlockhash("confirmed")).blockhash;
-
-    const signedTx = await wallet.signTransaction(transaction);
-    console.log(signedTx.serialize());
-
-    const serializedBuffer = signedTx.serialize().toString("base64");
-    
-    const { data } = await axios.post(`http://localhost:5001/transaction/deposit/${tokenMint}`, { serializedBuffer });
-    console.log(data);
-    fetchData();
   }
 
   // async function claim() {
@@ -443,8 +464,7 @@ export default function PlinkoPage() {
     // Front End
     const { provider, program } = getProviderAndProgram();
     const claimer = provider.wallet.publicKey;
-
-    const { data } = await axios.get(`http://localhost:5001/transaction/claim/${tokenMint}`);
+    const { data } = await axios.get(`${siteUrl}/transaction/claim/${tokenMint}/${claimAmount}`);
     let serializedBuffer = data;
     
     // Frontend Part
@@ -455,10 +475,51 @@ export default function PlinkoPage() {
     serializedBuffer = signedTx.serialize().toString("base64");
 
     // Backend Part
-    const response = await axios.post(`http://localhost:5001/transaction/claim/${tokenMint}`, { serializedBuffer });
+    const response = await axios.post(`${siteUrl}/transaction/claim/${tokenMint}`, { serializedBuffer });
     console.log(response.data);
 
     fetchData();
+  }
+
+  async function createNonceAccount() {
+    if (!wallet.publicKey) return;
+
+    try {
+      const { provider } = getProviderAndProgram();
+
+      const nonceAccount = Keypair.generate();
+      const transaction = new Transaction();
+      transaction.add(
+        SystemProgram.createAccount({
+          fromPubkey: wallet.publicKey,
+          newAccountPubkey: nonceAccount.publicKey,
+          lamports: await connection.getMinimumBalanceForRentExemption(
+            NONCE_ACCOUNT_LENGTH
+          ),
+          space: NONCE_ACCOUNT_LENGTH,
+          programId: SystemProgram.programId,
+        }),
+        // init nonce account
+        SystemProgram.nonceInitialize({
+          noncePubkey: nonceAccount.publicKey, // nonce account pubkey
+          authorizedPubkey: new PublicKey(nonceAccountAuth.publicKey), // nonce account authority (for advance and close)
+        })
+      );
+  
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, {
+        signers: [nonceAccount]
+      });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      console.log('NonceAccount: ', nonceAccount.publicKey.toString());
+      await axios.post(`${siteUrl}/config`, {
+        nonceAccount: nonceAccount.publicKey.toString(),
+      });
+      toast.success("Success");
+    } catch (error) {
+      console.log(error);
+      toast.error("Fail");
+    }
   }
 
   async function signMessage() {
@@ -546,6 +607,9 @@ export default function PlinkoPage() {
               </button>
             </>
           )}
+          <button className="border-2 border-black p-2" onClick={createNonceAccount}>
+            Create Nonce Account
+          </button>
         </div>
         <div className="flex gap-2">
           {!gameData && (
@@ -555,34 +619,52 @@ export default function PlinkoPage() {
           )}
         </div>
         {!!gameData && (
-          <div className="flex gap-2">
-            <div className="flex gap-1 items-center">
-              Fund Amount:
-              <input
-                className="border-2 border-black p-2"
-                type={"number"}
-                min={0}
-                step={0.01}
-                onChange={(e) => {
-                  setFundAmount(parseFloat(e.target.value || "0"));
-                }}
-                value={`${fundAmount}`}
-              />
-              {tokenSymbol}
+          <>
+            <div className="flex gap-2">
+              <div className="flex gap-1 items-center">
+                Fund Amount:
+                <input
+                  className="border-2 border-black p-2"
+                  type={"number"}
+                  min={0}
+                  step={0.01}
+                  onChange={(e) => {
+                    setFundAmount(parseFloat(e.target.value || "0"));
+                  }}
+                  value={`${fundAmount}`}
+                />
+                {tokenSymbol}
+              </div>
+              <button className="border-2 border-black p-2" onClick={fund}>
+                Fund
+              </button>
+              <button className="border-2 border-black p-2" onClick={deposit}>
+                Deposit through Backend
+              </button>              
+              <button className="border-2 border-black p-2" onClick={signMessage}>
+                Sign Message
+              </button>
             </div>
-            <button className="border-2 border-black p-2" onClick={fund}>
-              Fund
-            </button>
-            <button className="border-2 border-black p-2" onClick={deposit}>
-              Deposit through Backend
-            </button>
-            <button className="border-2 border-black p-2" onClick={claim}>
-              Claim through Backend
-            </button>
-            <button className="border-2 border-black p-2" onClick={signMessage}>
-              Sign Message
-            </button>
-          </div>
+            <div className="flex gap-2">
+              <div className="flex gap-1 items-center">
+                Claim Amount:
+                <input
+                  className="border-2 border-black p-2"
+                  type={"number"}
+                  min={0}
+                  step={0.01}
+                  onChange={(e) => {
+                    setClaimAmount(parseFloat(e.target.value || "0"));
+                  }}
+                  value={`${claimAmount}`}
+                />
+                {tokenSymbol}
+              </div>
+              <button className="border-2 border-black p-2" onClick={claim}>
+                Claim through Backend
+              </button>
+            </div>
+          </>
         )}
         {!!gameData && (
           <div className="flex gap-2">
