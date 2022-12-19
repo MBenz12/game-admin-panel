@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider } from "@project-serum/anchor";
+import { AnchorProvider, Program } from "@project-serum/anchor";
 import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
@@ -35,7 +35,7 @@ export default function CoinflipPage() {
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
   function getProviderAndProgram() {
-    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
+    const provider = new AnchorProvider(connection, anchorWallet, AnchorProvider.defaultOptions());
 
     const program = new Program(idl_coinflip, programID, provider) as Program<Coinflip>;
 
@@ -409,7 +409,7 @@ export default function CoinflipPage() {
       if ((await program.provider.connection.getBalance(commissionTreasury)) === 0) {
         transaction.add(
           SystemProgram.transfer({
-            fromPubkey: program.provider.wallet.publicKey,
+            fromPubkey: provider.wallet.publicKey,
             toPubkey: commissionTreasury,
             lamports: await program.provider.connection.getMinimumBalanceForRentExemption(0),
             programId: SystemProgram.programId,

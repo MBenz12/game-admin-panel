@@ -1,4 +1,4 @@
-import { Provider } from "@project-serum/anchor";
+import { AnchorProvider } from "@project-serum/anchor";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token-v2";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -47,7 +47,7 @@ export async function getAta(mint: PublicKey, owner: PublicKey, allowOffCurve: b
   );
 }
 
-export async function getCreateAtaInstruction(provider: Provider, ata: PublicKey, mint: PublicKey, owner: PublicKey) {
+export async function getCreateAtaInstruction(provider: AnchorProvider, ata: PublicKey, mint: PublicKey, owner: PublicKey) {
   let account = await provider.connection.getAccountInfo(ata);
   if (!account) {
     return createAssociatedTokenAccountInstruction(

@@ -17,6 +17,9 @@ export default function Header() {
         <li>
           <a className="text-white" href="/plinko">Plinko</a>
         </li>
+        <li>
+          <a className="text-white" href="/auction">Auction</a>
+        </li>
       </ul>
     </div>
   );

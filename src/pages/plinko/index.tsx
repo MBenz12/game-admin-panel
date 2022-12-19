@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider } from "@project-serum/anchor";
+import { Program, AnchorProvider } from "@project-serum/anchor";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
@@ -36,7 +36,7 @@ export default function PlinkoPage() {
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as anchor.Wallet;
   function getProviderAndProgram() {
-    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
+    const provider = new AnchorProvider(connection, anchorWallet, AnchorProvider.defaultOptions());
 
     const program = new Program(idl_plinko, programID, provider) as Program<Plinko>;
 

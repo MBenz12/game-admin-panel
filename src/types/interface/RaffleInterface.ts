@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Provider } from "@project-serum/anchor";
+import { AnchorProvider } from "@project-serum/anchor";
 import { ConnectionContextState } from "@solana/wallet-adapter-react";
 import { WalletContextState } from "@solana/wallet-adapter-react/src/useWallet";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
@@ -126,7 +126,7 @@ export interface dataInstructionType
 
 export interface raffleFinalizeDataType
 {
-    provider: Provider,
+    provider: AnchorProvider,
     raffleBank: PublicKey,
     raffleAddress: PublicKey,
     splAddress: PublicKey,

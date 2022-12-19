@@ -1,7 +1,7 @@
 import { bundlrStorage, Metaplex, toMetaplexFile, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { CreateMetadataV2, DataV2, Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { Program, AnchorProvider, web3 } from "@project-serum/anchor";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
@@ -94,7 +94,7 @@ export default function Rust() {
   };
 
   function getProviderAndProgram() {
-    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
+    const provider = new AnchorProvider(connection, anchorWallet, AnchorProvider.defaultOptions());
 
     const program = new Program(idl_raffle, programID, provider) as Program<AnchorRaffleTicket>;
 
@@ -763,7 +763,7 @@ export default function Rust() {
   }
 
   async function finalizeRaffle() {
-    const { program } = getProviderAndProgram();
+    const { program, provider } = getProviderAndProgram();
 
     const raffleAccount = await fetchRaffle();
     const raffleDB = await callRafflesAPI("getRaffleByRaffleAddress", raffleAddress);
@@ -773,7 +773,7 @@ export default function Rust() {
     console.log("Raffle in DB:", raffleDB.data);
 
     const raffleFinalizeDataType: raffleFinalizeDataType = {
-      provider: program.provider,
+      provider,
       raffleAddress: raffleAddress,
       raffleBank: new PublicKey(REACT_APP_RAFFLE_VAULT_WALLET_ADDRESS),
       owner: new PublicKey(raffleAccount.owner), // raffle owner
@@ -864,11 +864,11 @@ export default function Rust() {
   }
 
   async function initGlobal() {
-    const { program } = getProviderAndProgram();
+    const { program, provider } = getProviderAndProgram();
 
     console.log(program.provider.connection);
     console.log(program.programId.toString());
-    console.log(program.provider.wallet.publicKey.toString());
+    console.log(provider.wallet.publicKey.toString());
 
     const [globalProgAddress] = await PublicKey.findProgramAddress([Buffer.from(GLOBAL_ACCOUNT_SEED)], program.programId);
 
@@ -876,9 +876,9 @@ export default function Rust() {
 
     const tx = program.transaction.initializeGlobal({
       accounts: {
-        payer: program.provider.wallet.publicKey,
+        payer: provider.wallet.publicKey,
         global: globalProgAddress,
-        admin: program.provider.wallet.publicKey,
+        admin: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId,
       },
     });
@@ -892,11 +892,11 @@ export default function Rust() {
   }
 
   async function addAdmin(newAdmin: PublicKey, isAdd: boolean) {
-    const { program } = getProviderAndProgram();
+    const { program, provider } = getProviderAndProgram();
 
     console.log("Connection:", program.provider.connection);
     console.log("ProgramId:", program.programId.toString());
-    console.log("Signer:", program.provider.wallet.publicKey.toString());
+    console.log("Signer:", provider.wallet.publicKey.toString());
 
     const [globalProgAddress] = await PublicKey.findProgramAddress([Buffer.from(GLOBAL_ACCOUNT_SEED)], program.programId);
     console.log(`%cGlobal: ${globalProgAddress.toString()}`, "color:green");
@@ -907,7 +907,7 @@ export default function Rust() {
 
       tx = program.transaction.authorizeAdmin({
         accounts: {
-          authority: program.provider.wallet.publicKey,
+          authority: provider.wallet.publicKey,
           global: globalProgAddress,
           admin: newAdmin,
         },
@@ -917,7 +917,7 @@ export default function Rust() {
 
       tx = program.transaction.unauthorizeAdmin({
         accounts: {
-          authority: program.provider.wallet.publicKey,
+          authority: provider.wallet.publicKey,
           global: globalProgAddress,
           admin: newAdmin,
         },
@@ -933,7 +933,7 @@ export default function Rust() {
   }
 
   async function withdrawFromPda() {
-    const { program } = getProviderAndProgram();
+    const { program, provider } = getProviderAndProgram();
     const raffle = new PublicKey("FAApzUJoA9uBvjV9m9cktyJ7SaoVpmyLN72FeBVJrjZu");
     const global = new PublicKey("syfj4o1eSqPyeGfWvnEgdNwUjTd9h4tPe5e939jB6FW");
     const nftMint = new PublicKey("EQLFPM57Mh79HABtkeAE7qXxQQDBe2apqHVkhzzAmXeG");
@@ -955,13 +955,13 @@ export default function Rust() {
     if (receiverAccount === null) {
       console.log("Creating recipientATA:", recipientATA.toString());
 
-      transaction.add(Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, nftMint, recipientATA, destPublicKey, program.provider.wallet.publicKey));
+      transaction.add(Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, nftMint, recipientATA, destPublicKey, provider.wallet.publicKey));
     }
 
     transaction.add(
       program.transaction.withdrawFromPda(new anchor.BN(1), {
         accounts: {
-          admin: program.provider.wallet.publicKey,
+          admin: provider.wallet.publicKey,
           global,
           raffle,
           rafflePool,
@@ -973,8 +973,8 @@ export default function Rust() {
       })
     );
 
-    const txSignature = await wallet.sendTransaction(transaction, program.provider.connection);
-    await program.provider.connection.confirmTransaction(txSignature, "confirmed");
+    const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+    await provider.connection.confirmTransaction(txSignature, "confirmed");
 
     console.log(txSignature);
   }
@@ -1424,15 +1424,15 @@ export default function Rust() {
   }
 
   async function claimSkt() {
-    const { program } = getProviderAndProgram();
-    const response = await axios.get(`http://localhost:5000/transaction/${program.provider.wallet.publicKey.toString()}`);
+    const { program, provider } = getProviderAndProgram();
+    const response = await axios.get(`http://localhost:5000/transaction/${provider.wallet.publicKey.toString()}`);
     const recoveredTx = Transaction.from(Buffer.from(response.data, "base64"));
 
     console.log(recoveredTx);
     recoveredTx.instructions[0].data[0] = 10;
 
     const txSignature = await wallet.sendTransaction(recoveredTx, program.provider.connection);
-    await program.provider.connection.confirmTransaction(txSignature, "confirmed");
+    await provider.connection.confirmTransaction(txSignature, "confirmed");
     console.log(txSignature);
   }
 

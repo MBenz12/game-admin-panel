@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { IdlTypes, Program, Provider } from "@project-serum/anchor";
+import { IdlTypes, Program, AnchorProvider } from "@project-serum/anchor";
 import { TypeDef } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { WalletContextState } from "@solana/wallet-adapter-react/src/useWallet";
@@ -37,7 +37,7 @@ const idl_raffle = require('../idl/anchor_raffle_ticket.json');
 const programID = REACT_APP_RAFFLES_PROGRAM_ID;
 
 export function getProviderAndProgram(connection: Connection, anchorWallet: anchor.Wallet) {
-    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
+    const provider = new AnchorProvider(connection, anchorWallet, AnchorProvider.defaultOptions());
     const program = new Program(idl_raffle, programID, provider) as Program<AnchorRaffleTicket>;
 
     return { provider, program };

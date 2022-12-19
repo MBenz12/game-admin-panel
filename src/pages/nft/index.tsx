@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { Program, AnchorProvider, web3 } from "@project-serum/anchor";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, MintLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
@@ -12,7 +12,6 @@ import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { NFT_VAULT_POOL_SEED, RPC_DEVNET, RPC_MAINNET } from "config/constants";
 import { getAssociatedTokenAddressAndTransaction, isAdmin } from "config/utils";
-import { MintMachine } from "idl/mint_machine";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -58,8 +57,8 @@ export default function MyNftMachine() {
   }, []);
 
   function getProviderAndProgram() {
-    const provider = new Provider(connection, anchorWallet, Provider.defaultOptions());
-    const program = new Program(idl_mint_machine, programID, provider) as Program<MintMachine>;
+    const provider = new AnchorProvider(connection, anchorWallet, AnchorProvider.defaultOptions());
+    const program = new Program(idl_mint_machine, programID, provider);
 
     return { provider, program };
   }
@@ -104,7 +103,7 @@ export default function MyNftMachine() {
 
   async function initNftVaultMode1() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
 
       console.log("Init NFT Vault Mode 1...");
       const nftVaultKP = Keypair.generate();
@@ -126,7 +125,7 @@ export default function MyNftMachine() {
   
       const tx = new Transaction().add(
         SystemProgram.createAccount({
-          fromPubkey: program.provider.wallet.publicKey,
+          fromPubkey: provider.wallet.publicKey,
           newAccountPubkey: nftVaultKP.publicKey,
           lamports: rentExemptionAmount,
           space,
@@ -139,7 +138,7 @@ export default function MyNftMachine() {
       tx.add(
         program.transaction.initializeNftVault(poolBump, mintPrice, totalSupply, "", "", SystemProgram.programId, {
           accounts: {
-            authority: program.provider.wallet.publicKey,
+            authority: provider.wallet.publicKey,
             nftVault: nftVaultKP.publicKey,
             nftVaultPool,
             systemProgram: SystemProgram.programId,
@@ -164,7 +163,7 @@ export default function MyNftMachine() {
 
   async function initNftVaultMode2() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
 
       console.log("Init NFT Vault Mode2...");
       const nftVaultKP = Keypair.generate();
@@ -188,7 +187,7 @@ export default function MyNftMachine() {
   
       const tx = new Transaction().add(
         SystemProgram.createAccount({
-          fromPubkey: program.provider.wallet.publicKey,
+          fromPubkey: provider.wallet.publicKey,
           newAccountPubkey: nftVaultKP.publicKey,
           lamports: rentExemptionAmount,
           space,
@@ -201,7 +200,7 @@ export default function MyNftMachine() {
       tx.add(
         program.transaction.initializeNftVault(poolBump, mintPrice, totalSupply, name, symbol, new PublicKey(creator), {
           accounts: {
-            authority: program.provider.wallet.publicKey,
+            authority: provider.wallet.publicKey,
             nftVault: nftVaultKP.publicKey,
             nftVaultPool,
             systemProgram: SystemProgram.programId,
@@ -223,25 +222,25 @@ export default function MyNftMachine() {
 
   async function addUris() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
       const nftVault = new PublicKey(vaultMode2);
       const txs = [];
       for (const hash of hashes) {
         const tx = program.transaction.addUri(Buffer.from(hash), {
           accounts: {
-            authority: program.provider.wallet.publicKey,
+            authority: provider.wallet.publicKey,
             nftVault,
           },
         });
-        tx.feePayer = program.provider.wallet.publicKey;
+        tx.feePayer = provider.wallet.publicKey;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
         txs.push(tx);
       }
   
-      const signedTxs = await program.provider.wallet.signAllTransactions(txs);
+      const signedTxs = await provider.wallet.signAllTransactions(txs);
       for (const signedTx of signedTxs) {
-        const txSignature = await program.provider.connection.sendRawTransaction(signedTx.serialize());
-        await program.provider.connection.confirmTransaction(txSignature, "confirmed");
+        const txSignature = await provider.connection.sendRawTransaction(signedTx.serialize());
+        await provider.connection.confirmTransaction(txSignature, "confirmed");
         console.log(txSignature);
       }      
       toast.success('Success');
@@ -253,7 +252,7 @@ export default function MyNftMachine() {
 
   async function mintFromVault() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
       const nftVault = new PublicKey(vaultMode1);
       const vaultData = await program.account.nftVault.fetchNullable(nftVault);
   
@@ -283,7 +282,7 @@ export default function MyNftMachine() {
         transaction: tx,
         sourceATA: buyerAta,
         recipientATA: vaultPoolAta,
-      } = await getAssociatedTokenAddressAndTransaction(program.provider.connection, nftMint, program.provider.wallet.publicKey, nftVaultPool, true);
+      } = await getAssociatedTokenAddressAndTransaction(program.provider.connection, nftMint, provider.wallet.publicKey, nftVaultPool, true);
   
       console.log("NFT Mint Address", nftMint.toString());
       console.log("Vault Pool ATA", vaultPoolAta.toString());
@@ -292,7 +291,7 @@ export default function MyNftMachine() {
       tx.add(
         program.transaction.buyFromVault({
           accounts: {
-            buyer: program.provider.wallet.publicKey,
+            buyer: provider.wallet.publicKey,
             nftVault,
             nftVaultPool,
             nftMint,
@@ -317,14 +316,14 @@ export default function MyNftMachine() {
 
   async function mint() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
       const nftVault = new PublicKey(vaultMode2);
       const [nftVaultPool] = await PublicKey.findProgramAddress([Buffer.from("nft_vault_pool"), nftVault.toBuffer()], program.programId);
       const mintKeypair = Keypair.generate();
       const [metadata] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()], TOKEN_METADATA_PROGRAM_ID);
   
       const lamports = await program.provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
-      const tokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintKeypair.publicKey, program.provider.wallet.publicKey, false);
+      const tokenAccount = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, mintKeypair.publicKey, provider.wallet.publicKey, false);
   
       console.log("Mint Address: ", mintKeypair.publicKey.toString());
       console.log("Token Account: ", tokenAccount.toString());
@@ -333,35 +332,35 @@ export default function MyNftMachine() {
   
       tx.add(
         SystemProgram.createAccount({
-          fromPubkey: program.provider.wallet.publicKey,
+          fromPubkey: provider.wallet.publicKey,
           newAccountPubkey: mintKeypair.publicKey,
           space: MINT_SIZE,
           programId: TOKEN_PROGRAM_ID,
           lamports,
         }),
-        Token.createInitMintInstruction(TOKEN_PROGRAM_ID, mintKeypair.publicKey, 0, program.provider.wallet.publicKey, program.provider.wallet.publicKey),
+        Token.createInitMintInstruction(TOKEN_PROGRAM_ID, mintKeypair.publicKey, 0, provider.wallet.publicKey, provider.wallet.publicKey),
         Token.createAssociatedTokenAccountInstruction(
           ASSOCIATED_TOKEN_PROGRAM_ID,
           TOKEN_PROGRAM_ID,
           mintKeypair.publicKey,
           tokenAccount,
-          program.provider.wallet.publicKey,
-          program.provider.wallet.publicKey
+          provider.wallet.publicKey,
+          provider.wallet.publicKey
         )
       );
   
       tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      tx.feePayer = program.provider.wallet.publicKey;
+      tx.feePayer = provider.wallet.publicKey;
   
       tx.add(
         program.transaction.mint({
           accounts: {
-            mintAuthority: program.provider.wallet.publicKey,
+            mintAuthority: provider.wallet.publicKey,
             nftVault,
             nftVaultPool,
             mint: mintKeypair.publicKey,
             metadata,
-            payer: program.provider.wallet.publicKey,
+            payer: provider.wallet.publicKey,
             tokenAccount,
             rent: SYSVAR_RENT_PUBKEY,
             tokenProgram: TOKEN_PROGRAM_ID,
@@ -414,21 +413,21 @@ export default function MyNftMachine() {
 
   async function sendNfts() {
     try {
-      const { program } = getProviderAndProgram();
+      const { program, provider } = getProviderAndProgram();
       const nftVault = new PublicKey(vaultMode1);
       const [nftVaultPool] = await PublicKey.findProgramAddress([Buffer.from("nft_vault_pool"), nftVault.toBuffer()], program.programId);
       const txs = [];
       for (const mint of mints) {
         const mintKey = new PublicKey(mint);
-        const { transaction, sourceATA, recipientATA } = await getAssociatedTokenAddressAndTransaction(program.provider.connection, mintKey, program.provider.wallet.publicKey, nftVaultPool, true);
+        const { transaction, sourceATA, recipientATA } = await getAssociatedTokenAddressAndTransaction(program.provider.connection, mintKey, provider.wallet.publicKey, nftVaultPool, true);
   
-        transaction.add(Token.createTransferCheckedInstruction(TOKEN_PROGRAM_ID, sourceATA, mintKey, recipientATA, program.provider.wallet.publicKey, [], 1, 0));
-        transaction.feePayer = program.provider.wallet.publicKey;
+        transaction.add(Token.createTransferCheckedInstruction(TOKEN_PROGRAM_ID, sourceATA, mintKey, recipientATA, provider.wallet.publicKey, [], 1, 0));
+        transaction.feePayer = provider.wallet.publicKey;
         transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
         txs.push(transaction);
       }
   
-      const signedTxs = await program.provider.wallet.signAllTransactions(txs);
+      const signedTxs = await provider.wallet.signAllTransactions(txs);
       for (const signedTx of signedTxs) {
         const txSignature = await program.provider.connection.sendRawTransaction(signedTx.serialize());
         await program.provider.connection.confirmTransaction(txSignature, "confirmed");
