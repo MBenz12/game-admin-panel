@@ -3,11 +3,6 @@
   "name": "auction",
   "instructions": [
     {
-      "name": "test",
-      "accounts": [],
-      "args": []
-    },
-    {
       "name": "createAuction",
       "accounts": [
         {
@@ -21,13 +16,18 @@
           "isSigner": false
         },
         {
-          "name": "nftMint",
-          "isMut": false,
+          "name": "creatorNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "splTokenMint",
-          "isMut": false,
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -63,6 +63,31 @@
         {
           "name": "auctionDuration",
           "type": "u64"
+        },
+        {
+          "name": "splTokenMint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updateAuction",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "auctionDuration",
+          "type": "u64"
         }
       ]
     },
@@ -76,6 +101,11 @@
         },
         {
           "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
         },
@@ -101,6 +131,21 @@
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -132,7 +177,7 @@
         },
         {
           "name": "nftMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -167,6 +212,37 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "withdrawToken",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creatorTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -188,7 +264,7 @@
             "type": "u64"
           },
           {
-            "name": "autionStartedTime",
+            "name": "auctionStartedTime",
             "type": "u64"
           },
           {
@@ -233,6 +309,6 @@
     }
   ],
   "metadata": {
-    "address": "73YJ31M6KX8FVH5g9mYEy7aHd3YYNFUsSP6EZCFe8iXo"
+    "address": "ENURxCXe8YXZ5fn1zgwuQquFdN1o19N6huTWPfkBBBzW"
   }
 }

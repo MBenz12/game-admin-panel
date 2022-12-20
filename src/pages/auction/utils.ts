@@ -2,7 +2,7 @@ import { AnchorProvider } from "@project-serum/anchor";
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token-v2";
 import { PublicKey } from "@solana/web3.js";
 
-export const auction_pda_seed = "Auction";
+export const auction_pda_seed = "auction";
 
 export const auction_name = "test1";
 export const auction_creator = new PublicKey("3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd");

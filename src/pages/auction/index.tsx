@@ -71,7 +71,7 @@ export default function AuctionPage() {
       const nftMint = new PublicKey(nftMintAddress);
       const creatorNftAta = await getAta(nftMint, creator);
       const auctionNftAta = await getAta(nftMint, auction, true);
-      const auctionTokenAta = await getAta(splTokenMint, auction, true);
+      // const auctionTokenAta = await getAta(splTokenMint, auction, true);
 
       console.log("Connection:", provider.connection);
       console.log("Create Auction:");
@@ -79,37 +79,59 @@ export default function AuctionPage() {
       console.log("-> Auction Name:", auctionName);
       console.log("-> Mint Address:", splTokenMint.toString());
 
-      console.log(auctionName, price, duration);
+      console.log(auctionName, new BN(price * LAMPORTS_PER_SOL).toNumber(), new BN(duration * 3600 * 24).toNumber());
       const transaction = new Transaction();
-      // transaction.add(
-      //   program.transaction.createAuction(
-      //     auctionName,
-      //     new BN(price * LAMPORTS_PER_SOL),
-      //     new BN(duration * 3600 * 24),
-      //     {
-      //       accounts: {
-      //         creator,
-      //         auction,
-      //         // creatorNftAta,
-      //         nftMint,
-      //         // auctionNftAta,
-      //         splTokenMint,
-      //         // auctionTokenAta,
-      //         systemProgram: SystemProgram.programId,
-      //         tokenProgram: TOKEN_PROGRAM_ID,
-      //         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      //         rent: SYSVAR_RENT_PUBKEY
-      //       }
-      //     }
-      //   )
-      // );
       transaction.add(
-        program.transaction.test({
-          accounts: {}
-        })
+        program.transaction.createAuction(
+          auctionName,
+          new BN(price * LAMPORTS_PER_SOL),
+          new BN(duration * 3600 * 24),
+          splTokenMint,
+          {
+            accounts: {
+              creator,
+              auction,
+              creatorNftAta,
+              nftMint,
+              auctionNftAta,
+              systemProgram: SystemProgram.programId,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+              rent: SYSVAR_RENT_PUBKEY
+            }
+          }
+        )
       );
 
       const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchData();
+
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
+  }
+
+  async function updateAuctionDuration() {
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
+      const creator = provider.wallet.publicKey;
+
+      const transaction = new Transaction();
+      transaction.add(
+        program.instruction.updateAuction(new BN(duration * 3600 * 24), {
+          accounts: {
+            creator,
+            auction,
+          }
+        })
+      );
+
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
       fetchData();
@@ -125,17 +147,30 @@ export default function AuctionPage() {
     try {
       const { provider, program } = getProviderAndProgram();
       const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
-      const splTokenMint = new PublicKey(newTokenMint);
-      const bidder = provider.wallet.publicKey;
-      const auctionTokenAta = await getAta(splTokenMint, auction, true);
-      const bidderAta = await getAta(splTokenMint, auction);
       const auctionData = await program.account.auction.fetchNullable(auction);
       if (!auctionData) return;
+
+      const splTokenMint = auctionData.splTokenMint;
+      const bidder = provider.wallet.publicKey;
+      const auctionTokenAta = await getAta(splTokenMint, auction, true);
+      const bidderAta = await getAta(splTokenMint, bidder);
 
       const lastBidder = auctionData.lastBidder;
       const lastBidderAta = await getAta(splTokenMint, lastBidder);
 
       const transaction = new Transaction();
+      if (splTokenMint.toString() === NATIVE_MINT.toString()) {
+        let instruction = await getCreateAtaInstruction(provider, bidderAta, splTokenMint, bidder);
+        if (instruction) transaction.add(instruction);
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: bidder,
+            toPubkey: bidderAta,
+            lamports: bidPrice * LAMPORTS_PER_SOL,
+          }),
+          createSyncNativeInstruction(bidderAta)
+        );
+      }
       transaction.add(
         program.instruction.bid(
           new BN(bidPrice * LAMPORTS_PER_SOL),
@@ -143,19 +178,108 @@ export default function AuctionPage() {
             accounts: {
               bidder,
               auction,
+              splTokenMint,
               auctionTokenAta,
               bidderAta,
               lastBidder,
               lastBidderAta,
-              tokenProgram: TOKEN_PROGRAM_ID
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+              rent: SYSVAR_RENT_PUBKEY
             }
           }
         )
       );
 
-      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
+      fetchData();
+
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
+  }
+
+  async function transferToWinner() {
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
+      const auctionData = await program.account.auction.fetchNullable(auction);
+      if (!auctionData) return;
+
+      const creator = provider.wallet.publicKey;
+      // const winner = provider.wallet.publicKey;
+      const winner = auctionData.lastBidder;
+      const nftMint = auctionData.nftMint;
+      const winnerNftAta = await getAta(nftMint, winner);
+      const auctionNftAta = await getAta(nftMint, auction, true);
+
+      const transaction = new Transaction();
+      transaction.add(
+        program.instruction.transferToWinner(
+          {
+            accounts: {
+              creator,
+              auction,
+              auctionNftAta,
+              nftMint,
+              winner,
+              winnerNftAta,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+              rent: SYSVAR_RENT_PUBKEY
+            }
+          }
+        )
+      );
+
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature); 
+      fetchData();
+
+      toast.success('Success');
+    } catch (error) {
+      console.log(error);
+      toast.error('Fail');
+    }
+  }
+
+  async function withdrawToken() {
+    try {
+      const { provider, program } = getProviderAndProgram();
+      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
+      const auctionData = await program.account.auction.fetchNullable(auction);
+      if (!auctionData) return;
+
+      const creator = provider.wallet.publicKey;
+      const splTokenMint = auctionData.splTokenMint;
+      const creatorTokenAta = await getAta(splTokenMint, creator);
+      const auctionTokenAta = await getAta(splTokenMint, auction, true);
+
+      const transaction = new Transaction();
+      transaction.add(
+        program.instruction.withdrawToken(
+          {
+            accounts: {
+              creator,
+              auction,
+              creatorTokenAta,
+              auctionTokenAta,
+              tokenProgram: TOKEN_PROGRAM_ID,
+            }
+          }
+        )
+      );
+
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature); 
       fetchData();
 
       toast.success('Success');
@@ -185,6 +309,8 @@ export default function AuctionPage() {
       setNewTokenMint(auctionData.splTokenMint.toString());
       setBidPrice(auctionData.minBidPrice.toNumber() / LAMPORTS_PER_SOL);
       setAuctionFinishTime(new Date(auctionData.auctionFinishTime.toNumber()));
+      setPrice(auctionData.minBidPrice.toNumber() / LAMPORTS_PER_SOL);
+      setDuration((auctionData.auctionFinishTime.toNumber() - auctionData.auctionStartedTime.toNumber()) / 86400);
     }
   }
 
@@ -254,73 +380,88 @@ export default function AuctionPage() {
           </select>
         </div>
 
-        <div className="flex gap-2">
-          {!auctionData && (
-            <div className="flex gap-2">
-              <div className="flex gap-1 items-center">
-                Nft Mint:
-                <input
-                  className="border-2 border-black p-2"
-                  onChange={(e) => {
-                    setNftMintAddress(e.target.value);
-                  }}
-                  value={`${nftMintAddress}`}
-                />
-              </div>
-              <div className="flex gap-2 items-center">
-                Price:
-                <input
-                  className="border-2 border-black p-2"
-                  type={"number"}
-                  min={0}
-                  step={0.01}
-                  onChange={(e) => {
-                    setPrice(parseFloat(e.target.value || "0"));
-                  }}
-                  value={`${price}`}
-                />
-                {tokenSymbol}
-              </div>
-              <div className="flex gap-1 items-center">
-                Duration:
-                <input
-                  className="border-2 border-black p-2"
-                  type={"number"}
-                  min={0}
-                  step={0.01}
-                  onChange={(e) => {
-                    setDuration(parseFloat(e.target.value || "0"));
-                  }}
-                  value={`${duration}`}
-                />
-                Day
-              </div>
+        <div className="flex flex-col gap-2">
+
+          <div className="flex gap-2">
+            <div className="flex gap-1 items-center">
+              Nft Mint:
+              <input
+                className="border-2 border-black p-2"
+                onChange={(e) => {
+                  setNftMintAddress(e.target.value);
+                }}
+                value={`${nftMintAddress}`}
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              Price:
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setPrice(parseFloat(e.target.value || "0"));
+                }}
+                value={`${price}`}
+              />
+              {tokenSymbol}
+            </div>
+            <div className="flex gap-1 items-center">
+              Duration:
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={0}
+                step={0.01}
+                onChange={(e) => {
+                  setDuration(parseFloat(e.target.value || "0"));
+                }}
+                value={`${duration}`}
+              />
+              Day
+            </div>
+            {!auctionData ?
               <button className="border-2 border-black p-2" onClick={createAuction}>
                 Create Auction
+              </button> :
+              <button className="border-2 border-black p-2" onClick={updateAuctionDuration}>
+                Update Auction Duration
               </button>
-            </div>
-          )}
+            }
+          </div>
+
           {auctionData && (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <div>Min Bid Price: {price}</div>
               <div>Acution Finishes at: {auctionFinishTime.toString()}</div>
               <div className="flex gap-1 items-center">
-                Bid Price:
-                <input
-                  className="border-2 border-black p-2"
-                  type={"number"}
-                  min={0}
-                  step={0.01}
-                  onChange={(e) => {
-                    setBidPrice(parseFloat(e.target.value || "0"));
-                  }}
-                  value={`${bidPrice}`}
-                />
-                {tokenSymbol}
+                <div className="flex gap-1 items-center">
+                  Bid Price:
+                  <input
+                    className="border-2 border-black p-2"
+                    type={"number"}
+                    min={0}
+                    step={0.01}
+                    onChange={(e) => {
+                      setBidPrice(parseFloat(e.target.value || "0"));
+                    }}
+                    value={`${bidPrice}`}
+                  />
+                  {tokenSymbol}
+                </div>
+                <button className="border-2 border-black p-2" onClick={bid}>
+                  Bid
+                </button>
               </div>
-              <button className="border-2 border-black p-2" onClick={bid}>
-                Bid
-              </button>
+              <div className="flex">
+                <button className="border-2 border-black p-2" onClick={transferToWinner}>
+                  Transfer To Winner
+                </button>
+                <button className="border-2 border-black p-2" onClick={withdrawToken}>
+                  Withdraw Token
+                </button>
+              </div>
             </div>
           )}
         </div>

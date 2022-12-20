@@ -3,11 +3,6 @@ export type Auction = {
   "name": "auction",
   "instructions": [
     {
-      "name": "test",
-      "accounts": [],
-      "args": []
-    },
-    {
       "name": "createAuction",
       "accounts": [
         {
@@ -21,13 +16,18 @@ export type Auction = {
           "isSigner": false
         },
         {
-          "name": "nftMint",
-          "isMut": false,
+          "name": "creatorNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "splTokenMint",
-          "isMut": false,
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -63,6 +63,31 @@ export type Auction = {
         {
           "name": "auctionDuration",
           "type": "u64"
+        },
+        {
+          "name": "splTokenMint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updateAuction",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "auctionDuration",
+          "type": "u64"
         }
       ]
     },
@@ -76,6 +101,11 @@ export type Auction = {
         },
         {
           "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
         },
@@ -101,6 +131,21 @@ export type Auction = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -132,7 +177,7 @@ export type Auction = {
         },
         {
           "name": "nftMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -167,6 +212,37 @@ export type Auction = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "withdrawToken",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creatorTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -188,7 +264,7 @@ export type Auction = {
             "type": "u64"
           },
           {
-            "name": "autionStartedTime",
+            "name": "auctionStartedTime",
             "type": "u64"
           },
           {
@@ -239,11 +315,6 @@ export const IDL: Auction = {
   "name": "auction",
   "instructions": [
     {
-      "name": "test",
-      "accounts": [],
-      "args": []
-    },
-    {
       "name": "createAuction",
       "accounts": [
         {
@@ -257,13 +328,18 @@ export const IDL: Auction = {
           "isSigner": false
         },
         {
-          "name": "nftMint",
-          "isMut": false,
+          "name": "creatorNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "splTokenMint",
-          "isMut": false,
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionNftAta",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -299,6 +375,31 @@ export const IDL: Auction = {
         {
           "name": "auctionDuration",
           "type": "u64"
+        },
+        {
+          "name": "splTokenMint",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updateAuction",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "auctionDuration",
+          "type": "u64"
         }
       ]
     },
@@ -312,6 +413,11 @@ export const IDL: Auction = {
         },
         {
           "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
         },
@@ -337,6 +443,21 @@ export const IDL: Auction = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -368,7 +489,7 @@ export const IDL: Auction = {
         },
         {
           "name": "nftMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -403,6 +524,37 @@ export const IDL: Auction = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "withdrawToken",
+      "accounts": [
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "auction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "auctionTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creatorTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -424,7 +576,7 @@ export const IDL: Auction = {
             "type": "u64"
           },
           {
-            "name": "autionStartedTime",
+            "name": "auctionStartedTime",
             "type": "u64"
           },
           {
