@@ -1,4 +1,4 @@
-import { AnchorProvider } from "@project-serum/anchor";
+import { AnchorProvider, BN } from "@project-serum/anchor";
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token-v2";
 import { PublicKey } from "@solana/web3.js";
 
@@ -38,4 +38,18 @@ export async function getCreateAtaInstruction(provider: AnchorProvider, ata: Pub
       mint,
     );
   }
+}
+
+export type AuctionData = {
+  key: PublicKey,
+  name: string,
+  creator: PublicKey,
+  minBidPrice: BN,
+  auctionStartedTime: BN,
+  auctionFinishTime: BN,
+  nftMint: PublicKey,
+  splTokenMint: PublicKey,
+  lastBidder: PublicKey,
+  bidPrice: number,
+  transferedToWinner: boolean,
 }

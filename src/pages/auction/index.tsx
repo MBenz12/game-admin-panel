@@ -14,7 +14,7 @@ import { getSolBalance, isAdmin } from "config/utils";
 import { Auction } from "idl/auction";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { auction_name, auction_creator, getAta, getCreateAtaInstruction, getAuctionAddress } from "./utils";
+import { auction_name, auction_creator, getAta, getCreateAtaInstruction, getAuctionAddress, AuctionData } from "./utils";
 const idl = require("idl/auction.json");
 
 const deafultProgramIDs = [idl.metadata.address];
@@ -52,8 +52,7 @@ export default function AuctionPage() {
   const [price, setPrice] = useState(0);
   const [duration, setDuration] = useState(1);
   const [auctionName, setAuctionName] = useState(auction_name);
-  const [bidPrice, setBidPrice] = useState(0);
-  const [auctionFinishTime, setAuctionFinishTime] = useState(new Date());
+  const [auctions, setAuctions] = useState<AuctionData[]>([]);
 
   useEffect(() => {
     const network = localStorage.getItem("network");
@@ -143,16 +142,14 @@ export default function AuctionPage() {
     }
   }
 
-  async function bid() {
+  const bid = async (index: number) => {
     try {
+      const auctionData = auctions[index];
       const { provider, program } = getProviderAndProgram();
-      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
-      const auctionData = await program.account.auction.fetchNullable(auction);
-      if (!auctionData) return;
 
       const splTokenMint = auctionData.splTokenMint;
       const bidder = provider.wallet.publicKey;
-      const auctionTokenAta = await getAta(splTokenMint, auction, true);
+      const auctionTokenAta = await getAta(splTokenMint, auctionData.key, true);
       const bidderAta = await getAta(splTokenMint, bidder);
 
       const lastBidder = auctionData.lastBidder;
@@ -166,18 +163,18 @@ export default function AuctionPage() {
           SystemProgram.transfer({
             fromPubkey: bidder,
             toPubkey: bidderAta,
-            lamports: bidPrice * LAMPORTS_PER_SOL,
+            lamports: auctionData.bidPrice * LAMPORTS_PER_SOL,
           }),
           createSyncNativeInstruction(bidderAta)
         );
       }
       transaction.add(
         program.instruction.bid(
-          new BN(bidPrice * LAMPORTS_PER_SOL),
+          new BN(auctionData.bidPrice * LAMPORTS_PER_SOL),
           {
             accounts: {
               bidder,
-              auction,
+              auction: auctionData.key,
               splTokenMint,
               auctionTokenAta,
               bidderAta,
@@ -204,27 +201,25 @@ export default function AuctionPage() {
     }
   }
 
-  async function transferToWinner() {
+  const transferToWinner = async (index: number) => {
     try {
       const { provider, program } = getProviderAndProgram();
-      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
-      const auctionData = await program.account.auction.fetchNullable(auction);
-      if (!auctionData) return;
+      const auctionData = auctions[index];
 
       const creator = provider.wallet.publicKey;
       // const winner = provider.wallet.publicKey;
       const winner = auctionData.lastBidder;
       const nftMint = auctionData.nftMint;
       const winnerNftAta = await getAta(nftMint, winner);
-      const auctionNftAta = await getAta(nftMint, auction, true);
+      const auctionNftAta = await getAta(nftMint, auctionData.key, true);
 
       const transaction = new Transaction();
       transaction.add(
         program.instruction.transferToWinner(
           {
             accounts: {
-              creator,
-              auction,
+              signer: creator,
+              auction: auctionData.key,
               auctionNftAta,
               nftMint,
               winner,
@@ -240,7 +235,7 @@ export default function AuctionPage() {
 
       const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
-      console.log(txSignature); 
+      console.log(txSignature);
       fetchData();
 
       toast.success('Success');
@@ -250,17 +245,16 @@ export default function AuctionPage() {
     }
   }
 
-  async function withdrawToken() {
+  const withdrawToken = async (index: number) => {
     try {
       const { provider, program } = getProviderAndProgram();
-      const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
-      const auctionData = await program.account.auction.fetchNullable(auction);
-      if (!auctionData) return;
+      const auctionData = auctions[index];
 
       const creator = provider.wallet.publicKey;
+      // const winner = provider.wallet.publicKey;
       const splTokenMint = auctionData.splTokenMint;
+      const auctionTokenAta = await getAta(splTokenMint, auctionData.key, true);
       const creatorTokenAta = await getAta(splTokenMint, creator);
-      const auctionTokenAta = await getAta(splTokenMint, auction, true);
 
       const transaction = new Transaction();
       transaction.add(
@@ -268,9 +262,9 @@ export default function AuctionPage() {
           {
             accounts: {
               creator,
-              auction,
-              creatorTokenAta,
+              auction: auctionData.key,
               auctionTokenAta,
+              creatorTokenAta,
               tokenProgram: TOKEN_PROGRAM_ID,
             }
           }
@@ -279,7 +273,7 @@ export default function AuctionPage() {
 
       const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
-      console.log(txSignature); 
+      console.log(txSignature);
       fetchData();
 
       toast.success('Success');
@@ -289,30 +283,29 @@ export default function AuctionPage() {
     }
   }
 
-  async function fetchData() {
-    if (!wallet.publicKey) return;
-    const { provider, program } = getProviderAndProgram();
-
-    console.log("Network: ", network);
-    console.log("Program ID: ", program.programId.toString());
-    console.log("Game Name: ", auctionName);
-
-    const [auction] = await getAuctionAddress(program.programId, auctionName, provider.wallet.publicKey);
-    const auctionData = await program.account.auction.fetchNullable(auction);
-    setAuctionData(auctionData);
-    console.log(auctionData);
-    // @ts-ignore
-    console.log("Auction Data:", auctionData);
-    if (auctionData) {
-      setTokenMint(auctionData.splTokenMint.toString());
-      setTokenSymbol(tokens.filter(token => token.address === auctionData.splTokenMint.toString())[0].symbol);
-      setNewTokenMint(auctionData.splTokenMint.toString());
-      setBidPrice(auctionData.minBidPrice.toNumber() / LAMPORTS_PER_SOL);
-      setAuctionFinishTime(new Date(auctionData.auctionFinishTime.toNumber()));
-      setPrice(auctionData.minBidPrice.toNumber() / LAMPORTS_PER_SOL);
-      setDuration((auctionData.auctionFinishTime.toNumber() - auctionData.auctionStartedTime.toNumber()) / 86400);
+  const fetchData = async () => {
+    try {
+      const { program } = getProviderAndProgram();
+      const auctions = await program.account.auction.all();
+      console.log(auctions);
+      const newAuctions: AuctionData[] = [];
+      for (const auction of auctions) {
+        const { account: { bump, ...rest }, publicKey } = auction;
+        // const mint = rest.nftMint;
+        // const auctionAta = await getAta(mint, publicKey, true);
+        // const tokenBalance = await provider.connection.getTokenAccountBalance(auctionAta);
+        // let transfered = true;
+        // if (tokenBalance.value.uiAmount && tokenBalance.value.uiAmount > 0) transfered = false;
+        newAuctions.push({
+          ...rest, key: publicKey, bidPrice: 0
+        });
+      }
+      setAuctions(newAuctions);
+    } catch (error) {
+      console.log(error);
     }
   }
+
 
   async function withdraw() {
     try {
@@ -431,41 +424,73 @@ export default function AuctionPage() {
             }
           </div>
 
-          {auctionData && (
-            <div className="flex flex-col gap-2">
-              <div>Min Bid Price: {price}</div>
-              <div>Acution Finishes at: {auctionFinishTime.toString()}</div>
-              <div className="flex gap-1 items-center">
-                <div className="flex gap-1 items-center">
-                  Bid Price:
-                  <input
-                    className="border-2 border-black p-2"
-                    type={"number"}
-                    min={0}
-                    step={0.01}
-                    onChange={(e) => {
-                      setBidPrice(parseFloat(e.target.value || "0"));
-                    }}
-                    value={`${bidPrice}`}
-                  />
-                  {tokenSymbol}
-                </div>
-                <button className="border-2 border-black p-2" onClick={bid}>
-                  Bid
-                </button>
+          <div className="flex flex-col gap-5">
+            {auctions.map((auction, index) => (
+              <div key={index} className="flex flex-col">
+                <p>Name: {auction.name}</p>
+                <p>Creator: {auction.creator.toString()}</p>
+                <p>NFT: {auction.nftMint.toString()}</p>
+                {auction.lastBidder.toString() !== auction.creator.toString() && <p>Last Bidder: {auction.lastBidder.toString()}</p>}
+                <p>Min Bid Price: {auction.minBidPrice.toNumber() / LAMPORTS_PER_SOL}</p>
+                {new Date().getTime() > auction.auctionFinishTime.toNumber() * 1000 ?
+                  <div className="flex gap-3">
+                    <p>Finished</p>
+                    {<a href={`https://solscan.io/account/${auction.lastBidder.toString()}?cluster=devnet`}>Winner:{auction.lastBidder.toString()}</a>}
+                  </div> :
+                  <Timer finishTime={auction.auctionFinishTime.toNumber() * 1000} />
+                }
+                {
+                  wallet.publicKey ?
+                    <div>
+                      {(auction.auctionFinishTime.toNumber() * 1000 < new Date().getTime()) &&
+                        <div>
+                          {!auction.transferedToWinner ?
+                            <button onClick={() => transferToWinner(index)} className="p-2">
+                              {auction.lastBidder.toString() !== auction.creator.toString() ? "Transfer To Winner" : "Withdraw auction"}
+                            </button> :
+                            <button onClick={() => withdrawToken(index)} className="p-2">
+                              Withdraw Token
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div> :
+                    <div>
+                      Bid Price:<input className="p-2" value={auction.bidPrice} onChange={(e) => {
+                        const newAuctions = auctions.map(auction => ({ ...auction }));
+                        newAuctions[index].bidPrice = parseFloat(e.target.value) || 0;
+                        setAuctions(newAuctions);
+                      }} />
+                      {new Date().getTime() < auction.auctionFinishTime.toNumber() * 1000 &&
+                        <button className="p-2" onClick={() => bid(index)} disabled={auction.bidPrice * LAMPORTS_PER_SOL <= auction.minBidPrice.toNumber()} >Bid</button>
+                      }
+                    </div>
+                }
               </div>
-              <div className="flex">
-                <button className="border-2 border-black p-2" onClick={transferToWinner}>
-                  Transfer To Winner
-                </button>
-                <button className="border-2 border-black p-2" onClick={withdrawToken}>
-                  Withdraw Token
-                </button>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+const Timer = ({ finishTime }: { finishTime: number }) => {
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      const remainingTime = finishTime - new Date().getTime();
+      setRemainingTime(remainingTime < 0 ? 0 : Math.floor(remainingTime / 1000));
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+  return (
+    <div>
+      {Math.floor(remainingTime / 3600 / 24)}d {" "}
+      {Math.floor((remainingTime % (3600 * 24)) / 3600)}h {" "}
+      {Math.floor((remainingTime % 3600) / 60)}m {" "}
+      {remainingTime % 60}s {" "}
     </div>
   );
 }

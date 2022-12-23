@@ -161,7 +161,7 @@
       "name": "transferToWinner",
       "accounts": [
         {
-          "name": "creator",
+          "name": "signer",
           "isMut": true,
           "isSigner": true
         },
@@ -284,6 +284,10 @@
             "type": "publicKey"
           },
           {
+            "name": "transferedToWinner",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -306,9 +310,19 @@
       "code": 6002,
       "name": "AuctionNotFinished",
       "msg": "Auction is not finished yet"
+    },
+    {
+      "code": 6003,
+      "name": "TransferedToWinner",
+      "msg": "Transfer to winner first"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedWallet",
+      "msg": "Unathorized Wallet"
     }
   ],
   "metadata": {
-    "address": "ENURxCXe8YXZ5fn1zgwuQquFdN1o19N6huTWPfkBBBzW"
+    "address": "3AQ3XWGLWcWQ8BFf8VHKV2pz6YSimtAjaSbvHgZCsV5X"
   }
 }

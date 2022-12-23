@@ -161,7 +161,7 @@ export type Auction = {
       "name": "transferToWinner",
       "accounts": [
         {
-          "name": "creator",
+          "name": "signer",
           "isMut": true,
           "isSigner": true
         },
@@ -284,6 +284,10 @@ export type Auction = {
             "type": "publicKey"
           },
           {
+            "name": "transferedToWinner",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -306,6 +310,16 @@ export type Auction = {
       "code": 6002,
       "name": "AuctionNotFinished",
       "msg": "Auction is not finished yet"
+    },
+    {
+      "code": 6003,
+      "name": "TransferedToWinner",
+      "msg": "Transfer to winner first"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedWallet",
+      "msg": "Unathorized Wallet"
     }
   ]
 };
@@ -473,7 +487,7 @@ export const IDL: Auction = {
       "name": "transferToWinner",
       "accounts": [
         {
-          "name": "creator",
+          "name": "signer",
           "isMut": true,
           "isSigner": true
         },
@@ -596,6 +610,10 @@ export const IDL: Auction = {
             "type": "publicKey"
           },
           {
+            "name": "transferedToWinner",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -618,6 +636,16 @@ export const IDL: Auction = {
       "code": 6002,
       "name": "AuctionNotFinished",
       "msg": "Auction is not finished yet"
+    },
+    {
+      "code": 6003,
+      "name": "TransferedToWinner",
+      "msg": "Transfer to winner first"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedWallet",
+      "msg": "Unathorized Wallet"
     }
   ]
 };
