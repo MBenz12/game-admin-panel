@@ -15,6 +15,8 @@ import { Auction } from "idl/auction";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { auction_name, auction_creator, getAta, getCreateAtaInstruction, getAuctionAddress, AuctionData } from "./utils";
+import { Metaplex } from "@metaplex-foundation/js";
+import axios from "axios";
 const idl = require("idl/auction.json");
 
 const deafultProgramIDs = [idl.metadata.address];
@@ -22,6 +24,7 @@ const deafultAuctionNames = [auction_name];
 export default function AuctionPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET, "confirmed"), [network]);
+  const metaplex = new Metaplex(connection);
   const [programID, setProgramID] = useState(idl.metadata.address);
 
   const wallet = useWallet();
@@ -53,6 +56,32 @@ export default function AuctionPage() {
   const [duration, setDuration] = useState(1);
   const [auctionName, setAuctionName] = useState(auction_name);
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
+  const [nfts, setNfts] = useState<any[]>([]);
+
+  const fetchNfts = async () => {
+    try {
+      const mints = auctions.map(auction => auction.nftMint);
+      const nfts = await metaplex.nfts().findAllByMintList({ mints }).run();
+      console.log(nfts);
+      setNfts(await Promise.all(nfts.map(async (nft) => {
+        try {
+          if (nft?.uri) {
+            const { data } = await axios.get(nft?.uri);
+            console.log(data);
+            return data;
+          }          
+        } catch (error) {
+          
+        }
+      })));
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchNfts();
+  }, [auctions]);
 
   useEffect(() => {
     const network = localStorage.getItem("network");
@@ -394,7 +423,9 @@ export default function AuctionPage() {
                 min={0}
                 step={0.01}
                 onChange={(e) => {
-                  setPrice(parseFloat(e.target.value || "0"));
+                  // if (e.target.value.slice(-1) !== ".") {
+                    setPrice(parseFloat(e.target.value || "0"));
+                  // }
                 }}
                 value={`${price}`}
               />
@@ -427,15 +458,16 @@ export default function AuctionPage() {
           <div className="flex flex-col gap-5">
             {auctions.map((auction, index) => (
               <div key={index} className="flex flex-col">
-                <p>Name: {auction.name}</p>
+                <p>Acution Name: {auction.name}</p>
                 <p>Creator: {auction.creator.toString()}</p>
                 <p>NFT: {auction.nftMint.toString()}</p>
+                {nfts[index] && <img src={nfts[index].image} alt="" width={300} />}
                 {auction.lastBidder.toString() !== auction.creator.toString() && <p>Last Bidder: {auction.lastBidder.toString()}</p>}
                 <p>Min Bid Price: {auction.minBidPrice.toNumber() / LAMPORTS_PER_SOL}</p>
                 {new Date().getTime() > auction.auctionFinishTime.toNumber() * 1000 ?
                   <div className="flex gap-3">
                     <p>Finished</p>
-                    {<a href={`https://solscan.io/account/${auction.lastBidder.toString()}?cluster=devnet`}>Winner:{auction.lastBidder.toString()}</a>}
+                    {<a href={`https://solscan.io/account/${auction.lastBidder.toString()}?cluster=devnet`}>Winner:{auction.lastBidder.toString()} won with {auction.minBidPrice.toNumber() / LAMPORTS_PER_SOL}</a>} 
                   </div> :
                   <Timer finishTime={auction.auctionFinishTime.toNumber() * 1000} />
                 }
