@@ -3,6 +3,7 @@ import CoinflipPage from "pages/coinflip";
 import MyNftMachine from "pages/nft";
 import PlinkoPage from "pages/plinko";
 import AuctionPage from "pages/auction";
+import OraoPage from "pages/orao";
 import Rust from "pages/rust";
 import SlotsPage from "pages/slots";
 import { Route, Routes } from "react-router-dom";
@@ -17,6 +18,7 @@ const Router = () => {
       <Route path="/coinflip" element={<CoinflipPage />} />
       <Route path="/plinko" element={<PlinkoPage />} />
       <Route path="/auction" element={<AuctionPage />} />
+      <Route path="/orao" element={<OraoPage />} />
     </Routes>
   );
 };
