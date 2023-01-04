@@ -205,6 +205,11 @@ export type Coinflip = {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "recentSlothashes",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -714,6 +719,11 @@ export const IDL: Coinflip = {
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "recentSlothashes",
           "isMut": false,
           "isSigner": false
         }

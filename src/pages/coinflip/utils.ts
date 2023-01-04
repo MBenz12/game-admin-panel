@@ -6,7 +6,7 @@ export const idl_coinflip = require("idl/coinflip.json");
 export const coinflip_pda_seed = "coinflip_game_pda";
 export const player_pda_seed = "player_pda";
 
-export const game_name = "test4";
+export const game_name = "test7";
 export const game_owner = new PublicKey("3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd");
 export const default_commission = new PublicKey("SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ");
 export const splTokenMint = new PublicKey("SKTsW8KvzopQPdamXsPhvkPfwzTenegv3c3PEX4DT1o");

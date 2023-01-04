@@ -5,7 +5,7 @@ import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, Transaction } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, SYSVAR_SLOT_HASHES_PUBKEY, Transaction } from "@solana/web3.js";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
@@ -128,7 +128,7 @@ export default function CoinflipPage() {
           },
         })
       );
-      const txSignature = await wallet.sendTransaction(transaction, provider.connection);
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: false });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
       fetchData();
@@ -242,6 +242,7 @@ export default function CoinflipPage() {
             commissionTreasuryAta,
             instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
             tokenProgram: TOKEN_PROGRAM_ID,
+            recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
           },
         })
       );
@@ -285,6 +286,7 @@ export default function CoinflipPage() {
     console.log("Program ID: ", program.programId.toString());
 
     const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
+    console.log(game.toString());
     const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
     const playerData = await program.account.player.fetchNullable(player);
     const gameData = await program.account.game.fetchNullable(game);
@@ -314,7 +316,7 @@ export default function CoinflipPage() {
       setGameBalance(gameData.mainBalance.toNumber());
       setCommissionFee(gameData.commissionFee / 100);
       // @ts-ignore
-      setWinPercents(gameData.winPercents.map((percent) => percent / 200));
+      setWinPercents(gameData.winPercents.map((percent) => percent / 100));
     } else {
       setCommunityWallets([]);
       setNewCommunityWallets([default_community.toString()]);
@@ -447,7 +449,7 @@ export default function CoinflipPage() {
       const transaction = new Transaction();
       transaction.add(
         program.transaction.setWinning(
-          winPercents.map((percent) => percent * 200),
+          winPercents.map((percent) => percent * 100),
           {
             accounts: {
               payer: provider.wallet.publicKey,
