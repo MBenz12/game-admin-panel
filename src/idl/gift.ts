@@ -18,7 +18,7 @@ export type Gift = {
         {
           "name": "nftMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "metadata",
@@ -96,7 +96,7 @@ export type Gift = {
       ]
     },
     {
-      "name": "redeam",
+      "name": "redeem",
       "accounts": [
         {
           "name": "target",
@@ -184,7 +184,7 @@ export type Gift = {
             "type": "publicKey"
           },
           {
-            "name": "redeamed",
+            "name": "redeemed",
             "type": "bool"
           },
           {
@@ -208,8 +208,8 @@ export type Gift = {
     },
     {
       "code": 6002,
-      "name": "AlreadyRedeamed",
-      "msg": "Already Redeamed"
+      "name": "AlreadyRedeemed",
+      "msg": "Already Redeemed"
     }
   ]
 };
@@ -234,7 +234,7 @@ export const IDL: Gift = {
         {
           "name": "nftMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "metadata",
@@ -312,7 +312,7 @@ export const IDL: Gift = {
       ]
     },
     {
-      "name": "redeam",
+      "name": "redeem",
       "accounts": [
         {
           "name": "target",
@@ -400,7 +400,7 @@ export const IDL: Gift = {
             "type": "publicKey"
           },
           {
-            "name": "redeamed",
+            "name": "redeemed",
             "type": "bool"
           },
           {
@@ -424,8 +424,8 @@ export const IDL: Gift = {
     },
     {
       "code": 6002,
-      "name": "AlreadyRedeamed",
-      "msg": "Already Redeamed"
+      "name": "AlreadyRedeemed",
+      "msg": "Already Redeemed"
     }
   ]
 };

@@ -18,7 +18,7 @@
         {
           "name": "nftMint",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "metadata",
@@ -96,7 +96,7 @@
       ]
     },
     {
-      "name": "redeam",
+      "name": "redeem",
       "accounts": [
         {
           "name": "target",
@@ -184,7 +184,7 @@
             "type": "publicKey"
           },
           {
-            "name": "redeamed",
+            "name": "redeemed",
             "type": "bool"
           },
           {
@@ -208,8 +208,8 @@
     },
     {
       "code": 6002,
-      "name": "AlreadyRedeamed",
-      "msg": "Already Redeamed"
+      "name": "AlreadyRedeemed",
+      "msg": "Already Redeemed"
     }
   ],
   "metadata": {
