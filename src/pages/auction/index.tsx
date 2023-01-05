@@ -6,15 +6,15 @@ import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCTIONS_PUBKEY, SYSVAR_RENT_PUBKEY, Transaction } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction } from "@solana/web3.js";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
-import { getSolBalance, isAdmin } from "config/utils";
+import { getAta, getCreateAtaInstruction, getSolBalance, isAdmin } from "config/utils";
 import { Auction } from "idl/auction";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { auction_name, auction_creator, getAta, getCreateAtaInstruction, getAuctionAddress, AuctionData } from "./utils";
+import { auction_name, auction_creator, getAuctionAddress, AuctionData } from "./utils";
 import { Metaplex } from "@metaplex-foundation/js";
 import axios from "axios";
 const idl = require("idl/auction.json");

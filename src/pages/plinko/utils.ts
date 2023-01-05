@@ -1,6 +1,4 @@
-import { AnchorProvider } from "@project-serum/anchor";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
-import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token-v2";
 import { Keypair, PublicKey } from "@solana/web3.js";
 
 export const plinko_pda_seed = "plinko_game_pda";
@@ -37,24 +35,4 @@ export const convertLog = (data: { [x: string]: { toString?: () => any; }; }, is
     }
   });
   return res;
-}
-
-export async function getAta(mint: PublicKey, owner: PublicKey, allowOffCurve: boolean = false) {
-  return await getAssociatedTokenAddress(
-    mint,
-    owner,
-    allowOffCurve
-  );
-}
-
-export async function getCreateAtaInstruction(provider: AnchorProvider, ata: PublicKey, mint: PublicKey, owner: PublicKey) {
-  let account = await provider.connection.getAccountInfo(ata);
-  if (!account) {
-    return createAssociatedTokenAccountInstruction(
-      provider.wallet.publicKey,
-      ata,
-      owner,
-      mint,
-    );
-  }
 }

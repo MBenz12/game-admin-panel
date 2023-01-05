@@ -20,8 +20,11 @@ export default function Header() {
         <li>
           <a className="text-white" href="/auction">Auction</a>
         </li>
-        <li>
+        {/* <li>
           <a className="text-white" href="/orao">Orao</a>
+        </li> */}
+        <li>
+          <a className="text-white" href="/gift">Gift</a>
         </li>
       </ul>
     </div>

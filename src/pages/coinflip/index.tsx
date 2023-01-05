@@ -9,12 +9,12 @@ import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCT
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
-import { getSolBalance, isAdmin } from "config/utils";
+import { getAta, getCreateAtaInstruction, getSolBalance, isAdmin } from "config/utils";
 import { Coinflip } from "idl/coinflip";
 import { default_community } from "pages/slots/utils";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { convertLog, default_commission, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress } from "./utils";
+import { convertLog, default_commission, game_name, getGameAddress, getPlayerAddress } from "./utils";
 
 const idl_coinflip = require("idl/coinflip.json");
 const deafultProgramIDs = [idl_coinflip.metadata.address];

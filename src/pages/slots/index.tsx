@@ -9,11 +9,11 @@ import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, SYSVAR_INSTRUCT
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
-import { getSolBalance, isAdmin } from "config/utils";
+import { getAta, getCreateAtaInstruction, getSolBalance, isAdmin } from "config/utils";
 import { Slots } from "idl/slots";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { convertLog, default_commission, default_community, game_name, getAta, getCreateAtaInstruction, getGameAddress, getPlayerAddress } from "./utils";
+import { convertLog, default_commission, default_community, game_name, getGameAddress, getPlayerAddress } from "./utils";
 const idl_slots = require("idl/slots.json");
 
 const deafultProgramIDs = [idl_slots.metadata.address];

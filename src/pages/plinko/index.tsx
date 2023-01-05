@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as anchor from "@project-serum/anchor";
 import { Program, AnchorProvider } from "@project-serum/anchor";
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
-import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
+import { createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -11,12 +10,12 @@ import axios from "axios";
 import Header from "components/Header";
 import StorageSelect from "components/SotrageSelect";
 import { eCurrencyType, RPC_DEVNET, RPC_MAINNET, SPLTOKENS_MAP } from "config/constants";
-import { isAdmin } from "config/utils";
+import { getAta, getCreateAtaInstruction, isAdmin } from "config/utils";
 import { Plinko } from "idl/plinko";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as nacl from "tweetnacl";
-import { convertLog, default_backend, game_name, getAta, getCreateAtaInstruction, getGameAddress, JWT_EXPIRES_IN, JWT_TOKEN, nonceAccountAuth, siteUrl } from "./utils";
+import { convertLog, default_backend, game_name, getGameAddress, JWT_EXPIRES_IN, JWT_TOKEN, nonceAccountAuth, siteUrl } from "./utils";
 import jwt from "jsonwebtoken";
 
 const idl_plinko = require("idl/plinko.json");

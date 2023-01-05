@@ -7,6 +7,7 @@ import OraoPage from "pages/orao";
 import Rust from "pages/rust";
 import SlotsPage from "pages/slots";
 import { Route, Routes } from "react-router-dom";
+import GiftPage from "pages/gift";
 
 const Router = () => {
   return (
@@ -18,6 +19,7 @@ const Router = () => {
       <Route path="/coinflip" element={<CoinflipPage />} />
       <Route path="/plinko" element={<PlinkoPage />} />
       <Route path="/auction" element={<AuctionPage />} />
+      <Route path="/gift" element={<GiftPage />} />
       <Route path="/orao" element={<OraoPage />} />
     </Routes>
   );
