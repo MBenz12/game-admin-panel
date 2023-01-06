@@ -12,14 +12,17 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { getAta, getCreateAtaInstruction, isAdmin } from "config/utils";
 import { toast } from "react-toastify";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getGiftAddress, getMetadataAddress, TOKEN_METADATA_PROGRAM_ID } from "./utils";
+import { getGiftAddress, getMetadataAddress, NftData, TOKEN_METADATA_PROGRAM_ID } from "./utils";
 import { createInitializeMintInstruction, createSyncNativeInstruction, MINT_SIZE } from "@solana/spl-token-v2";
+import { Metaplex } from "@metaplex-foundation/js";
+import axios from "axios";
 
 const deafultProgramIDs = [idl.metadata.address];
 
 export default function GiftPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
   const connection = useMemo(() => new Connection(network === "mainnet-beta" ? RPC_MAINNET : RPC_DEVNET, "confirmed"), [network]);
+  const metaplex = new Metaplex(connection);
   const [programID, setProgramID] = useState(idl.metadata.address);
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet() as Wallet;
@@ -35,6 +38,7 @@ export default function GiftPage() {
     { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },    
   ];
   const [targetAddress, setTargetAddress] = useState("");
+  const [giftNfts, setGiftNfts] = useState<NftData[]>([]);
 
   useEffect(() => {
     if (!wallet.publicKey) return;
@@ -47,14 +51,43 @@ export default function GiftPage() {
   }, [wallet.publicKey, network, programID]);
 
 
-  async function fetchData() {
+  async function fetchWalletNfts() {
     if (!provider || !program) return;
     try {
+      const nfts = await metaplex.nfts().findAllByOwner({ owner: provider.wallet.publicKey }).run();
+      const gifts: NftData[] = [];
+      await Promise.all(nfts.map(async (nft) => {
+        // @ts-ignore
+        const mint = nft.mintAddress;
+        const [gift] = await getGiftAddress(mint);
+        const giftData = await program.account.gift.fetchNullable(gift);
+        if (giftData) {
+          gifts.push({
+            mint,
+            name: nft.name,
+            symbol: nft.symbol,
+            uri: nft.uri,
+            image: "",
+            gift: giftData
+          });
+        }
+      }));
+
+      await Promise.all(gifts.map(async (nft) => {
+        try {
+          const { data } = await axios.get(nft.uri);
+          nft.image = data.image;
+        } catch (error) {
+          console.log(error);
+        }
+      }));
+      console.log(gifts);
+      setGiftNfts(gifts);
     } catch (error) {
-      console.log(error);
-      toast.error('Failed');
+
     }
   }
+
 
   async function createGift() {
     if (!provider || !program) return;
@@ -130,7 +163,7 @@ export default function GiftPage() {
       const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true, signers: [nftMint] });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
-      fetchData();
+      fetchWalletNfts();
       toast.success("Success");
     } catch (error) {
       console.log(error);
@@ -138,9 +171,53 @@ export default function GiftPage() {
     }
   }
 
+  async function redeem(nft: NftData) {
+    if (!provider || !program) return;
+    try {
+      console.log(provider.connection);
+      const nftMint = nft.mint;
+      const [gift] = await getGiftAddress(nftMint);
+      // const target = provider.wallet.publicKey;
+      const target = nft.gift.destinationAddress;
+      const targetNftAta = await getAta(nftMint, target);
+      const splTokenMint = nft.gift.splTokenMint;
+      const giftTokenAta = await getAta(splTokenMint, gift, true);
+      const targetTokenAta = await getAta(splTokenMint, target);
+
+      const transaction = new Transaction();
+      transaction.add(
+        program.instruction.redeem({
+          accounts: {
+            target,
+            nftMint,
+            targetNftAta,
+            gift,
+            splTokenMint,
+            giftTokenAta,
+            targetTokenAta,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY
+          }
+        })
+      );
+
+      console.log(transaction);
+
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchWalletNfts();
+      toast.success("Success");
+    } catch (error) {
+      
+    }
+  }
+
   useEffect(() => {
-    fetchData();
-  }, [wallet.connected, network, programID]);
+    fetchWalletNfts();
+  }, [wallet.publicKey, network, programID]);
 
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
@@ -222,6 +299,15 @@ export default function GiftPage() {
           <button className="border-2 border-black p-2" onClick={createGift}>
             Create Gift
           </button>
+        </div>
+        <div className="w-full grid grid-cols-4">
+          {giftNfts.map(nft => (
+            <div key={nft.mint.toString()} className="flex flex-col gap-2 border border-black p-2 rounded-md items-center justify-center">
+              <p className="">{nft.name}</p>
+              <img src={nft.image} alt="" className="w-full h-full" />
+              {nft.gift.redeemed ? <p>Redeemed</p> : <button className="w-full border border-black p-2 rounded-md" onClick={() => redeem(nft)}>Redeem</button>}
+            </div>
+          ))}
         </div>
       </div>
     </div>

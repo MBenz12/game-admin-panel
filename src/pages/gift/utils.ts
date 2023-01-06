@@ -1,4 +1,4 @@
-import { getAssociatedTokenAddress } from "@solana/spl-token-v2";
+import { BN } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import idl from "idl/gift.json";
 export const programId = new PublicKey(idl.metadata.address);
@@ -19,3 +19,21 @@ export const getMetadataAddress = async (nftMint: PublicKey) => {
     ], TOKEN_METADATA_PROGRAM_ID);
 }
 
+export type NftData = {
+    mint: PublicKey;
+    name: string;
+    symbol: string;
+    uri: string;
+    image: string;
+    gift: GiftData;
+};
+
+export type GiftData = {
+    creator: PublicKey;
+    splTokenMint: PublicKey;
+    destinationAddress: PublicKey;
+    tokenAmount: BN;
+    nftMint: PublicKey;
+    redeemed: boolean;
+    bump: number;
+}
