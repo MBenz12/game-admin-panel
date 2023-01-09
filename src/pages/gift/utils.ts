@@ -3,6 +3,16 @@ import { PublicKey } from "@solana/web3.js";
 import idl from "idl/gift.json";
 export const programId = new PublicKey(idl.metadata.address);
 export const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+export const global_name = "global1";
+export const global_owner = new PublicKey("3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd");
+
+export const getGlobalAddress = async () => {
+    return await PublicKey.findProgramAddress([
+        Buffer.from("global"),
+        Buffer.from(global_name),
+        global_owner.toBuffer(),
+    ], programId);
+}
 
 export const getGiftAddress = async (nftMint: PublicKey) => {
     return await PublicKey.findProgramAddress([
@@ -34,6 +44,9 @@ export type GiftData = {
     destinationAddress: PublicKey;
     tokenAmount: BN;
     nftMint: PublicKey;
+    expirationTime: BN;
+    gateTokenMint: PublicKey;
+    gateTokenAmount: BN;
     redeemed: boolean;
     bump: number;
 }

@@ -12,12 +12,13 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { getAta, getCreateAtaInstruction, isAdmin } from "config/utils";
 import { toast } from "react-toastify";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getGiftAddress, getMetadataAddress, NftData, TOKEN_METADATA_PROGRAM_ID } from "./utils";
-import { createInitializeMintInstruction, createSyncNativeInstruction, MINT_SIZE } from "@solana/spl-token-v2";
+import { getGiftAddress, getGlobalAddress, getMetadataAddress, global_name, NftData, TOKEN_METADATA_PROGRAM_ID } from "./utils";
+import { createInitializeMintInstruction, createSyncNativeInstruction, MINT_SIZE, getMint } from "@solana/spl-token-v2";
 import { Metaplex } from "@metaplex-foundation/js";
 import axios from "axios";
 
 const deafultProgramIDs = [idl.metadata.address];
+const deafultGlobalNames = [global_name];
 
 export default function GiftPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
@@ -35,10 +36,15 @@ export default function GiftPage() {
     { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
     { symbol: 'FORGE', address: SPLTOKENS_MAP.get(eCurrencyType.FORGE) },
     { symbol: 'DUST', address: SPLTOKENS_MAP.get(eCurrencyType.DUST) },
-    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },    
+    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },
   ];
   const [targetAddress, setTargetAddress] = useState("");
   const [giftNfts, setGiftNfts] = useState<NftData[]>([]);
+  const [globalName, setGlobalName] = useState(global_name);
+  const [gateTokenAddress, setGateTokenAddress] = useState(NATIVE_MINT.toString());
+  const [gateTokenAmount, setGateTokenAmount] = useState(0);
+  const [expirationPeriod, setExpirationPeriod] = useState(5 * 24 * 3600);
+  const [globalData, setGlobalData] = useState<any>();
 
   useEffect(() => {
     if (!wallet.publicKey) return;
@@ -50,10 +56,25 @@ export default function GiftPage() {
 
   }, [wallet.publicKey, network, programID]);
 
-
   async function fetchWalletNfts() {
     if (!provider || !program) return;
     try {
+      const [global] = await getGlobalAddress();
+      const globalData = await program.account.global.fetchNullable(global);
+      if (globalData) {
+        setGlobalData(globalData);
+        setExpirationPeriod(globalData.expirationPeriod.toNumber());
+        setGateTokenAddress(globalData.gateTokenMint.toString());
+        const mintAccount = await getMint(provider.connection, globalData.gateTokenMint);
+        const decimals = Math.pow(10, mintAccount.decimals);
+        setGateTokenAmount(globalData.gateTokenAmount.toNumber() / decimals);
+      } else {
+        setGlobalData(null);
+        setExpirationPeriod(5 * 24 * 3600);
+        setGateTokenAddress(NATIVE_MINT.toString());
+        setGateTokenAmount(0);
+      }
+
       const nfts = await metaplex.nfts().findAllByOwner({ owner: provider.wallet.publicKey }).run();
       const gifts: NftData[] = [];
       await Promise.all(nfts.map(async (nft) => {
@@ -88,12 +109,79 @@ export default function GiftPage() {
     }
   }
 
+  async function initializeGlobal() {
+    if (!provider || !program) return;
+    try {
+      const [global] = await getGlobalAddress();
+      const gateTokenMint = new PublicKey(gateTokenAddress);
+      const mintAccount = await getMint(provider.connection, gateTokenMint);
+      const decimals = Math.pow(10, mintAccount.decimals);
+      const transaction = new Transaction();
+
+      transaction.add(
+        program.instruction.initializeGlobal(
+          globalName,
+          new BN(expirationPeriod),
+          gateTokenMint,
+          new BN(gateTokenAmount * decimals),
+          {
+            accounts: {
+              authority: provider.wallet.publicKey,
+              global,
+              systemProgram: SystemProgram.programId,
+            }
+          }
+        )
+      );
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      toast.success("Success");
+      fetchWalletNfts();
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed');
+    }
+  }
+
+  async function updateGlobal() {
+    if (!provider || !program) return;
+    try {
+      const [global] = await getGlobalAddress();
+      const gateTokenMint = new PublicKey(gateTokenAddress);
+      const mintAccount = await getMint(provider.connection, gateTokenMint);
+      const decimals = Math.pow(10, mintAccount.decimals);
+      const transaction = new Transaction();
+
+      transaction.add(
+        program.instruction.updateGlobal(
+          new BN(expirationPeriod),
+          gateTokenMint,
+          new BN(gateTokenAmount * decimals),
+          {
+            accounts: {
+              authority: provider.wallet.publicKey,
+              global,
+            }
+          }
+        )
+      );
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      toast.success("Success");
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed');
+    }
+  }
 
   async function createGift() {
     if (!provider || !program) return;
     try {
       const nftMint = Keypair.generate();
       const [gift] = await getGiftAddress(nftMint.publicKey);
+      const [global] = await getGlobalAddress();
       const creator = provider.wallet.publicKey;
       const target = new PublicKey(targetAddress);
       const [metadata] = await getMetadataAddress(nftMint.publicKey);
@@ -127,10 +215,10 @@ export default function GiftPage() {
           programId: TOKEN_PROGRAM_ID,
           lamports,
         }),
-        createInitializeMintInstruction(nftMint.publicKey, 0, provider.wallet.publicKey, provider.wallet.publicKey),        
+        createInitializeMintInstruction(nftMint.publicKey, 0, provider.wallet.publicKey, provider.wallet.publicKey),
       );
 
-      const instruction = await getCreateAtaInstruction(provider, targetNftAta, nftMint.publicKey, target); 
+      const instruction = await getCreateAtaInstruction(provider, targetNftAta, nftMint.publicKey, target);
       if (instruction) transaction.add(instruction);
 
       transaction.add(
@@ -146,6 +234,7 @@ export default function GiftPage() {
               nftMint: nftMint.publicKey,
               metadata,
               gift,
+              global,
               splTokenMint,
               creatorTokenAta,
               giftTokenAta,
@@ -179,6 +268,7 @@ export default function GiftPage() {
       const [gift] = await getGiftAddress(nftMint);
       // const target = provider.wallet.publicKey;
       const target = nft.gift.destinationAddress;
+      const gateTokenAta = await getAta(nft.gift.gateTokenMint, target);
       const targetNftAta = await getAta(nftMint, target);
       const splTokenMint = nft.gift.splTokenMint;
       const giftTokenAta = await getAta(splTokenMint, gift, true);
@@ -192,6 +282,7 @@ export default function GiftPage() {
             nftMint,
             targetNftAta,
             gift,
+            gateTokenAta,
             splTokenMint,
             giftTokenAta,
             targetTokenAta,
@@ -211,13 +302,13 @@ export default function GiftPage() {
       fetchWalletNfts();
       toast.success("Success");
     } catch (error) {
-      
+
     }
   }
 
   useEffect(() => {
     fetchWalletNfts();
-  }, [wallet.publicKey, network, programID]);
+  }, [wallet.publicKey, network, programID, globalName]);
 
   if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
     /* If the user's wallet is not connected, display connect wallet button. */
@@ -252,8 +343,58 @@ export default function GiftPage() {
       </div>
       <div className="ml-5 flex gap-2 flex-col ">
         <StorageSelect itemkey={"gift1-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
-
+        <StorageSelect itemkey="gift-globalname" label="Global Name" setItem={setGlobalName} defaultItems={deafultGlobalNames} defaultItem={globalName} />
         <div className="flex gap-2">
+          <div>
+            Expiration Period:{" "}
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setExpirationPeriod(parseInt(e.target.value) || 0);
+              }}
+              value={expirationPeriod}
+            />s
+          </div>
+
+          <div>
+            Gate Token Mint:{" "}
+            <input
+              className="w-[450px] border-2 border-black p-2"
+              onChange={(e) => {
+                setGateTokenAddress(e.target.value);
+              }}
+              value={gateTokenAddress}
+            />
+          </div>
+
+          <div>
+            Gate Token Amount:{" "}
+            <input
+              type="number"
+              min={0}
+              step={0.1}
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setGateTokenAmount(parseFloat(e.target.value) || 0);
+              }}
+              value={gateTokenAmount}
+            />
+          </div>
+
+          {!globalData ?
+            <button className="border-2 border-black p-2" onClick={initializeGlobal}>
+              Initialize Global
+            </button> :
+            <button className="border-2 border-black p-2" onClick={updateGlobal}>
+              Update Global
+            </button>
+          }
+        </div>
+        
+        {globalData && <div className="flex gap-2">
           <div className="flex gap-2 items-center">
             <p>Token Name:</p>
             <select
@@ -299,9 +440,9 @@ export default function GiftPage() {
           <button className="border-2 border-black p-2" onClick={createGift}>
             Create Gift
           </button>
-        </div>
+        </div>}
         <div className="w-full grid grid-cols-4">
-          {giftNfts.map(nft => (
+          {globalData && giftNfts.map(nft => (
             <div key={nft.mint.toString()} className="flex flex-col gap-2 border border-black p-2 rounded-md items-center justify-center">
               <p className="">{nft.name}</p>
               <img src={nft.image} alt="" className="w-full h-full" />

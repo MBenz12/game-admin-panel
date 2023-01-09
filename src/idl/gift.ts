@@ -3,6 +3,73 @@ export type Gift = {
   "name": "gift",
   "instructions": [
     {
+      "name": "initializeGlobal",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "global",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateGlobal",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "global",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "createGift",
       "accounts": [
         {
@@ -28,6 +95,11 @@ export type Gift = {
         {
           "name": "gift",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "global",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -119,6 +191,11 @@ export type Gift = {
           "isSigner": false
         },
         {
+          "name": "gateTokenAta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
@@ -159,6 +236,38 @@ export type Gift = {
   ],
   "accounts": [
     {
+      "name": "global",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "expirationPeriod",
+            "type": "u64"
+          },
+          {
+            "name": "gateTokenMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "gateTokenAmount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "gift",
       "type": {
         "kind": "struct",
@@ -172,6 +281,14 @@ export type Gift = {
             "type": "publicKey"
           },
           {
+            "name": "gateTokenMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "gateTokenAmount",
+            "type": "u64"
+          },
+          {
             "name": "destinationAddress",
             "type": "publicKey"
           },
@@ -182,6 +299,10 @@ export type Gift = {
           {
             "name": "nftMint",
             "type": "publicKey"
+          },
+          {
+            "name": "expirationTime",
+            "type": "u64"
           },
           {
             "name": "redeemed",
@@ -210,6 +331,16 @@ export type Gift = {
       "code": 6002,
       "name": "AlreadyRedeemed",
       "msg": "Already Redeemed"
+    },
+    {
+      "code": 6003,
+      "name": "Expired",
+      "msg": "Time Expired"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidHolder",
+      "msg": "Invalid Gate Token Holder"
     }
   ]
 };
@@ -219,6 +350,73 @@ export const IDL: Gift = {
   "name": "gift",
   "instructions": [
     {
+      "name": "initializeGlobal",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "global",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateGlobal",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "global",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "createGift",
       "accounts": [
         {
@@ -244,6 +442,11 @@ export const IDL: Gift = {
         {
           "name": "gift",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "global",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -335,6 +538,11 @@ export const IDL: Gift = {
           "isSigner": false
         },
         {
+          "name": "gateTokenAta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
@@ -375,6 +583,38 @@ export const IDL: Gift = {
   ],
   "accounts": [
     {
+      "name": "global",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "expirationPeriod",
+            "type": "u64"
+          },
+          {
+            "name": "gateTokenMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "gateTokenAmount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "gift",
       "type": {
         "kind": "struct",
@@ -388,6 +628,14 @@ export const IDL: Gift = {
             "type": "publicKey"
           },
           {
+            "name": "gateTokenMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "gateTokenAmount",
+            "type": "u64"
+          },
+          {
             "name": "destinationAddress",
             "type": "publicKey"
           },
@@ -398,6 +646,10 @@ export const IDL: Gift = {
           {
             "name": "nftMint",
             "type": "publicKey"
+          },
+          {
+            "name": "expirationTime",
+            "type": "u64"
           },
           {
             "name": "redeemed",
@@ -426,6 +678,16 @@ export const IDL: Gift = {
       "code": 6002,
       "name": "AlreadyRedeemed",
       "msg": "Already Redeemed"
+    },
+    {
+      "code": 6003,
+      "name": "Expired",
+      "msg": "Time Expired"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidHolder",
+      "msg": "Invalid Gate Token Holder"
     }
   ]
 };
