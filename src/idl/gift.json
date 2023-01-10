@@ -98,11 +98,6 @@
           "isSigner": false
         },
         {
-          "name": "global",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
@@ -164,6 +159,24 @@
         {
           "name": "uri",
           "type": "string"
+        },
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "verifiedCreators",
+          "type": {
+            "vec": "publicKey"
+          }
         }
       ]
     },
@@ -192,6 +205,21 @@
         },
         {
           "name": "gateTokenAta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMetadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftAta",
           "isMut": false,
           "isSigner": false
         },
@@ -287,6 +315,12 @@
           {
             "name": "gateTokenAmount",
             "type": "u64"
+          },
+          {
+            "name": "verifiedCreators",
+            "type": {
+              "vec": "publicKey"
+            }
           },
           {
             "name": "destinationAddress",

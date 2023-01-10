@@ -47,6 +47,7 @@ export type GiftData = {
     expirationTime: BN;
     gateTokenMint: PublicKey;
     gateTokenAmount: BN;
+    verifiedCreators: PublicKey[];
     redeemed: boolean;
     bump: number;
 }

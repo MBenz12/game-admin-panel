@@ -98,11 +98,6 @@ export type Gift = {
           "isSigner": false
         },
         {
-          "name": "global",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
@@ -164,6 +159,24 @@ export type Gift = {
         {
           "name": "uri",
           "type": "string"
+        },
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "verifiedCreators",
+          "type": {
+            "vec": "publicKey"
+          }
         }
       ]
     },
@@ -192,6 +205,21 @@ export type Gift = {
         },
         {
           "name": "gateTokenAta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMetadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftAta",
           "isMut": false,
           "isSigner": false
         },
@@ -287,6 +315,12 @@ export type Gift = {
           {
             "name": "gateTokenAmount",
             "type": "u64"
+          },
+          {
+            "name": "verifiedCreators",
+            "type": {
+              "vec": "publicKey"
+            }
           },
           {
             "name": "destinationAddress",
@@ -445,11 +479,6 @@ export const IDL: Gift = {
           "isSigner": false
         },
         {
-          "name": "global",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "splTokenMint",
           "isMut": true,
           "isSigner": false
@@ -511,6 +540,24 @@ export const IDL: Gift = {
         {
           "name": "uri",
           "type": "string"
+        },
+        {
+          "name": "expirationPeriod",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenAmount",
+          "type": "u64"
+        },
+        {
+          "name": "gateTokenMint",
+          "type": "publicKey"
+        },
+        {
+          "name": "verifiedCreators",
+          "type": {
+            "vec": "publicKey"
+          }
         }
       ]
     },
@@ -539,6 +586,21 @@ export const IDL: Gift = {
         },
         {
           "name": "gateTokenAta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftMetadata",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gateNftAta",
           "isMut": false,
           "isSigner": false
         },
@@ -634,6 +696,12 @@ export const IDL: Gift = {
           {
             "name": "gateTokenAmount",
             "type": "u64"
+          },
+          {
+            "name": "verifiedCreators",
+            "type": {
+              "vec": "publicKey"
+            }
           },
           {
             "name": "destinationAddress",
