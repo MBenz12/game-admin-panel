@@ -255,7 +255,7 @@ export default function GiftPage() {
     fetchWalletNfts();
   }, [wallet.publicKey, network, programID]);
 
-  if (!wallet.connected || (wallet.publicKey && !isAdmin(wallet.publicKey))) {
+  if (!wallet.connected) {
     /* If the user's wallet is not connected, display connect wallet button. */
     return (
       <div className="relative">
