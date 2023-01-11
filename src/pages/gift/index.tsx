@@ -19,7 +19,6 @@ import { Metaplex } from "@metaplex-foundation/js";
 import axios from "axios";
 
 const deafultProgramIDs = [idl.metadata.address];
-// const deafultGlobalNames = [global_name];
 
 export default function GiftPage() {
   const [network, setNetwork] = useState(WalletAdapterNetwork.Devnet);
@@ -41,12 +40,13 @@ export default function GiftPage() {
   ];
   const [targetAddress, setTargetAddress] = useState("");
   const [giftNfts, setGiftNfts] = useState<NftData[]>([]);
-  // const [globalName, setGlobalName] = useState(global_name);
   const [gateTokenAddress, setGateTokenAddress] = useState(NATIVE_MINT.toString());
   const [gateTokenAmount, setGateTokenAmount] = useState(0);
-  const [expirationPeriod, setExpirationPeriod] = useState(5 * 24 * 3600);
-  // const [globalData, setGlobalData] = useState<any>();
+  const [expirationTime, setExpirationTime] = useState(new Date().getTime());
   const [verifiedCreators, setVerifiedCreators] = useState<string[]>(['']);
+  const [nftName, setNftName] = useState("Gift 1");
+  const [nftSymbol, setNftSymbol] = useState("DOG");
+  const [nftUri, setNftUri] = useState("https://arweave.net/0NB1dSUJMZvC_M65xVlFdpAh_WLrukzD0RlT9eZN5OA");
 
   useEffect(() => {
     if (!wallet.publicKey) return;
@@ -61,22 +61,6 @@ export default function GiftPage() {
   async function fetchWalletNfts() {
     if (!provider || !program) return;
     try {
-      // const [global] = await getGlobalAddress();
-      // const globalData = await program.account.global.fetchNullable(global);
-      // if (globalData) {
-      //   setGlobalData(globalData);
-      //   setExpirationPeriod(globalData.expirationPeriod.toNumber());
-      //   setGateTokenAddress(globalData.gateTokenMint.toString());
-      //   const mintAccount = await getMint(provider.connection, globalData.gateTokenMint);
-      //   const decimals = Math.pow(10, mintAccount.decimals);
-      //   setGateTokenAmount(globalData.gateTokenAmount.toNumber() / decimals);
-      // } else {
-      //   setGlobalData(null);
-      //   setExpirationPeriod(5 * 24 * 3600);
-      //   setGateTokenAddress(NATIVE_MINT.toString());
-      //   setGateTokenAmount(0);
-      // }
-
       const nfts = await metaplex.nfts().findAllByOwner({ owner: provider.wallet.publicKey }).run();
       const gifts: NftData[] = [];
       await Promise.all(nfts.map(async (nft) => {
@@ -111,72 +95,6 @@ export default function GiftPage() {
     }
   }
 
-  // async function initializeGlobal() {
-  //   if (!provider || !program) return;
-  //   try {
-  //     const [global] = await getGlobalAddress();
-  //     const gateTokenMint = new PublicKey(gateTokenAddress);
-  //     const mintAccount = await getMint(provider.connection, gateTokenMint);
-  //     const decimals = Math.pow(10, mintAccount.decimals);
-  //     const transaction = new Transaction();
-
-  //     transaction.add(
-  //       program.instruction.initializeGlobal(
-  //         globalName,
-  //         new BN(expirationPeriod),
-  //         gateTokenMint,
-  //         new BN(gateTokenAmount * decimals),
-  //         {
-  //           accounts: {
-  //             authority: provider.wallet.publicKey,
-  //             global,
-  //             systemProgram: SystemProgram.programId,
-  //           }
-  //         }
-  //       )
-  //     );
-  //     const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
-  //     await provider.connection.confirmTransaction(txSignature, "confirmed");
-  //     console.log(txSignature);
-  //     toast.success("Success");
-  //     fetchWalletNfts();
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error('Failed');
-  //   }
-  // }
-
-  // async function updateGlobal() {
-  //   if (!provider || !program) return;
-  //   try {
-  //     const [global] = await getGlobalAddress();
-  //     const gateTokenMint = new PublicKey(gateTokenAddress);
-  //     const mintAccount = await getMint(provider.connection, gateTokenMint);
-  //     const decimals = Math.pow(10, mintAccount.decimals);
-  //     const transaction = new Transaction();
-
-  //     transaction.add(
-  //       program.instruction.updateGlobal(
-  //         new BN(expirationPeriod),
-  //         gateTokenMint,
-  //         new BN(gateTokenAmount * decimals),
-  //         {
-  //           accounts: {
-  //             authority: provider.wallet.publicKey,
-  //             global,
-  //           }
-  //         }
-  //       )
-  //     );
-  //     const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
-  //     await provider.connection.confirmTransaction(txSignature, "confirmed");
-  //     console.log(txSignature);
-  //     toast.success("Success");
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error('Failed');
-  //   }
-  // }
 
   async function getNftByVerifiedCreators(creators: PublicKey[]) {
     if (!provider || !program) return;
@@ -190,7 +108,7 @@ export default function GiftPage() {
         }
       }
     } catch (error) {
-      
+
     }
   }
 
@@ -244,10 +162,10 @@ export default function GiftPage() {
       transaction.add(
         program.instruction.createGift(
           new BN(tokenAmount * LAMPORTS_PER_SOL),
-          "Gift 1",
-          "Gift",
-          "https://arweave.net/0NB1dSUJMZvC_M65xVlFdpAh_WLrukzD0RlT9eZN5OA",
-          new BN(expirationPeriod),
+          nftName,
+          nftSymbol,
+          nftUri,
+          new BN(expirationTime),
           new BN(gateTokenAmount * decimals),
           gateTokenMint,
           verifiedCreators.filter(creator => creator).map(creator => new PublicKey(creator)),
@@ -370,70 +288,50 @@ export default function GiftPage() {
       </div>
       <div className="ml-5 flex gap-2 flex-col ">
         <StorageSelect itemkey={"gift1-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
-        {/* <StorageSelect itemkey="gift-globalname" label="Global Name" setItem={setGlobalName} defaultItems={deafultGlobalNames} defaultItem={globalName} /> */}
-        {/* <div className="flex gap-2">
-          <div>
-            Expiration Period:{" "}
-            <input
-              type="number"
-              min={0}
-              step={1}
-              className="border-2 border-black p-2"
-              onChange={(e) => {
-                setExpirationPeriod(parseInt(e.target.value) || 0);
-              }}
-              value={expirationPeriod}
-            />s
-          </div>
-
-          <div>
-            Gate Token Mint:{" "}
-            <input
-              className="w-[450px] border-2 border-black p-2"
-              onChange={(e) => {
-                setGateTokenAddress(e.target.value);
-              }}
-              value={gateTokenAddress}
-            />
-          </div>
-
-          <div>
-            Gate Token Amount:{" "}
-            <input
-              type="number"
-              min={0}
-              step={0.1}
-              className="border-2 border-black p-2"
-              onChange={(e) => {
-                setGateTokenAmount(parseFloat(e.target.value) || 0);
-              }}
-              value={gateTokenAmount}
-            />
-          </div>
-
-          {!globalData ?
-            <button className="border-2 border-black p-2" onClick={initializeGlobal}>
-              Initialize Global
-            </button> :
-            <button className="border-2 border-black p-2" onClick={updateGlobal}>
-              Update Global
-            </button>
-          }
-        </div> */}
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 items-center">
             <div>
-              Expiration Period:{" "}
+              Nft Name:{" "}
               <input
-                type="number"
-                min={0}
-                step={1}
                 className="border-2 border-black p-2"
                 onChange={(e) => {
-                  setExpirationPeriod(parseInt(e.target.value) || 0);
+                  setNftName(e.target.value);
                 }}
-                value={expirationPeriod}
-              />s
+                value={nftName}
+              />
+            </div>
+            <div>
+              Nft Symbol:{" "}
+              <input
+                className="border-2 border-black p-2"
+                onChange={(e) => {
+                  setNftSymbol(e.target.value);
+                }}
+                value={nftSymbol}
+              />
+            </div>
+            <div>
+              Nft Uri:{" "}
+              <input
+                className="w-[450px] border-2 border-black p-2"
+                onChange={(e) => {
+                  setNftUri(e.target.value);
+                }}
+                value={nftUri}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <div>
+              Expiration Date:{" "}
+              <input
+                type="datetime-local"
+                className="border-2 border-black p-2"
+                onChange={(e) => {
+                  setExpirationTime(new Date(e.target.value).getTime() / 1000);
+                }}
+                defaultValue={""}
+              />
             </div>
 
             <div>
@@ -468,11 +366,11 @@ export default function GiftPage() {
                 <input
                   className="w-[450px] border-2 border-black p-2"
                   onChange={(e) => {
-                    setVerifiedCreators(verifiedCreators.map((verifiedCreator, i) => index === i ? e.target.value : verifiedCreator ));
+                    setVerifiedCreators(verifiedCreators.map((verifiedCreator, i) => index === i ? e.target.value : verifiedCreator));
                   }}
                   value={verifiedCreator}
                 />
-                <button 
+                <button
                   className="border-2 border-black p-2"
                   onClick={() => {
                     setVerifiedCreators(verifiedCreators.filter((_, i) => index !== i));
@@ -480,8 +378,8 @@ export default function GiftPage() {
                 >-</button>
               </div>
             ))}
-            <button 
-              className="border-2 border-black p-2 w-fit" 
+            <button
+              className="border-2 border-black p-2 w-fit"
               onClick={() => {
                 setVerifiedCreators(verifiedCreators.concat(""));
               }}

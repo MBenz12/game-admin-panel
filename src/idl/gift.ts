@@ -3,73 +3,6 @@ export type Gift = {
   "name": "gift",
   "instructions": [
     {
-      "name": "initializeGlobal",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "global",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "expirationPeriod",
-          "type": "u64"
-        },
-        {
-          "name": "gateTokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "gateTokenAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "updateGlobal",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "global",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "expirationPeriod",
-          "type": "u64"
-        },
-        {
-          "name": "gateTokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "gateTokenAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "createGift",
       "accounts": [
         {
@@ -161,7 +94,7 @@ export type Gift = {
           "type": "string"
         },
         {
-          "name": "expirationPeriod",
+          "name": "expirationTime",
           "type": "u64"
         },
         {
@@ -263,38 +196,6 @@ export type Gift = {
     }
   ],
   "accounts": [
-    {
-      "name": "global",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "authority",
-            "type": "publicKey"
-          },
-          {
-            "name": "expirationPeriod",
-            "type": "u64"
-          },
-          {
-            "name": "gateTokenMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "gateTokenAmount",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "gift",
       "type": {
@@ -384,73 +285,6 @@ export const IDL: Gift = {
   "name": "gift",
   "instructions": [
     {
-      "name": "initializeGlobal",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "global",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "expirationPeriod",
-          "type": "u64"
-        },
-        {
-          "name": "gateTokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "gateTokenAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "updateGlobal",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "global",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "expirationPeriod",
-          "type": "u64"
-        },
-        {
-          "name": "gateTokenMint",
-          "type": "publicKey"
-        },
-        {
-          "name": "gateTokenAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "createGift",
       "accounts": [
         {
@@ -542,7 +376,7 @@ export const IDL: Gift = {
           "type": "string"
         },
         {
-          "name": "expirationPeriod",
+          "name": "expirationTime",
           "type": "u64"
         },
         {
@@ -644,38 +478,6 @@ export const IDL: Gift = {
     }
   ],
   "accounts": [
-    {
-      "name": "global",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "authority",
-            "type": "publicKey"
-          },
-          {
-            "name": "expirationPeriod",
-            "type": "u64"
-          },
-          {
-            "name": "gateTokenMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "gateTokenAmount",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
     {
       "name": "gift",
       "type": {

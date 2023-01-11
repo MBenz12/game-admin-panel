@@ -67,5 +67,6 @@ export const adminWallets = [
   "SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ",
   "EF5qxGB1AirUH4ENw1niV1ewiNHzH2fWs7naQQYF2dc",
   "3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd",
-  "9xAv1a1to5pzYEjmh5bEFcbZbFA5SuJfKDMu7J2WbqYB"
+  "9xAv1a1to5pzYEjmh5bEFcbZbFA5SuJfKDMu7J2WbqYB",
+  "4Ar5WXALb8BvWxrrnSRmHLWEG7BN3jET7QgxquaKwfTm",
 ];
