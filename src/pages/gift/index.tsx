@@ -10,10 +10,10 @@ import { IDL, Gift } from "idl/gift";
 import StorageSelect from "components/SotrageSelect";
 import Header from "components/Header";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { getAta, getCreateAtaInstruction, isAdmin } from "config/utils";
+import { getAta, getCreateAtaInstruction } from "config/utils";
 import { toast } from "react-toastify";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getGiftAddress, getMetadataAddress, NftData, TOKEN_METADATA_PROGRAM_ID } from "./utils";
+import { getGiftAddress, getMetadataAddress, GiftData, NftData, TOKEN_METADATA_PROGRAM_ID } from "./utils";
 import { createInitializeMintInstruction, createSyncNativeInstruction, MINT_SIZE, getMint } from "@solana/spl-token-v2";
 import { Metaplex } from "@metaplex-foundation/js";
 import axios from "axios";
@@ -32,10 +32,12 @@ export default function GiftPage() {
   const [newTokenMint, setNewTokenMint] = useState(NATIVE_MINT.toString());
   const [tokenAmount, setTokenAmount] = useState(0);
   const tokens = [
+    { symbol: 'Other', address: "" },
     { symbol: 'SOL', address: NATIVE_MINT.toString() },
     { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
     { symbol: 'FORGE', address: SPLTOKENS_MAP.get(eCurrencyType.FORGE) },
     { symbol: 'DUST', address: SPLTOKENS_MAP.get(eCurrencyType.DUST) },
+    { symbol: 'DUST(Devnet)', address: SPLTOKENS_MAP.get(eCurrencyType.DUST_DEVNET) },
     { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },
   ];
   const [targetAddress, setTargetAddress] = useState("");
@@ -47,6 +49,8 @@ export default function GiftPage() {
   const [nftName, setNftName] = useState("Gift 1");
   const [nftSymbol, setNftSymbol] = useState("DOG");
   const [nftUri, setNftUri] = useState("https://arweave.net/0NB1dSUJMZvC_M65xVlFdpAh_WLrukzD0RlT9eZN5OA");
+  const [withdrawAddress, setWithdrawAddress] = useState("");
+  const [gifts, setGifts] = useState<Array<GiftData>>([]);
 
   useEffect(() => {
     if (!wallet.publicKey) return;
@@ -58,25 +62,42 @@ export default function GiftPage() {
 
   }, [wallet.publicKey, network, programID]);
 
+  async function fetchAllGifts() {
+    if (!provider || !program) return;
+    try {
+      const gifts = await program.account.gift.all();
+      setGifts(gifts.map(gift => gift.account));
+      console.log(gifts);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async function fetchWalletNfts() {
     if (!provider || !program) return;
     try {
+      fetchAllGifts();
+      console.log("fetching gift");
       const nfts = await metaplex.nfts().findAllByOwner({ owner: provider.wallet.publicKey }).run();
       const gifts: NftData[] = [];
       await Promise.all(nfts.map(async (nft) => {
         // @ts-ignore
         const mint = nft.mintAddress;
         const [gift] = await getGiftAddress(mint);
-        const giftData = await program.account.gift.fetchNullable(gift);
-        if (giftData) {
-          gifts.push({
-            mint,
-            name: nft.name,
-            symbol: nft.symbol,
-            uri: nft.uri,
-            image: "",
-            gift: giftData
-          });
+        try {
+          const giftData = await program.account.gift.fetchNullable(gift);
+          if (giftData) {
+            gifts.push({
+              mint,
+              name: nft.name,
+              symbol: nft.symbol,
+              uri: nft.uri,
+              image: "",
+              gift: giftData
+            });
+          }
+        } catch (error) {
+
         }
       }));
 
@@ -91,7 +112,7 @@ export default function GiftPage() {
       console.log(gifts);
       setGiftNfts(gifts);
     } catch (error) {
-
+      console.log(error);
     }
   }
 
@@ -115,6 +136,10 @@ export default function GiftPage() {
   async function createGift() {
     if (!provider || !program) return;
     try {
+      // if (expirationTime * 1000 - new Date().getTime() <= 8 * 3600 * 1000) {
+      //   toast.error('Expiration time should be at least 8hrs');
+      //   return;
+      // }
       const nftMint = Keypair.generate();
       const [gift] = await getGiftAddress(nftMint.publicKey);
       const creator = provider.wallet.publicKey;
@@ -190,7 +215,7 @@ export default function GiftPage() {
         )
       );
 
-      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true, signers: [nftMint] });
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: false, signers: [nftMint] });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
       fetchWalletNfts();
@@ -204,7 +229,6 @@ export default function GiftPage() {
   async function redeem(nft: NftData) {
     if (!provider || !program) return;
     try {
-      console.log(provider.connection);
       const nftMint = nft.mint;
       const [gift] = await getGiftAddress(nftMint);
       const target = nft.gift.destinationAddress;
@@ -241,7 +265,7 @@ export default function GiftPage() {
 
       console.log(transaction);
 
-      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: false });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
       fetchWalletNfts();
@@ -251,9 +275,94 @@ export default function GiftPage() {
     }
   }
 
+  async function burn(nft: NftData) {
+    if (!provider || !program) return;
+    try {
+      const nftMint = nft.mint;
+      const [gift] = await getGiftAddress(nftMint);
+      const target = new PublicKey(withdrawAddress);
+      const splTokenMint = nft.gift.splTokenMint;
+      const giftTokenAta = await getAta(splTokenMint, gift, true);
+      const targetTokenAta = await getAta(splTokenMint, target);
+      const transaction = new Transaction();
+      transaction.add(
+        program.instruction.burnGift({
+          accounts: {
+            admin: provider.wallet.publicKey,
+            target,
+            nftMint,
+            gift,
+            splTokenMint,
+            giftTokenAta,
+            targetTokenAta,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY
+          }
+        })
+      );
+
+      console.log(transaction);
+
+      const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: false });
+      await provider.connection.confirmTransaction(txSignature, "confirmed");
+      console.log(txSignature);
+      fetchWalletNfts();
+      toast.success("Success");
+    } catch (error) {
+
+    }
+  }
+
+  async function closeAllGift() {
+    if (!wallet.publicKey || !wallet.signAllTransactions || !program || !provider) return;
+    try {
+      const pdas = await program.provider.connection.getParsedProgramAccounts(program.programId);
+      const txns = [];
+      let transaction = new Transaction();
+      let cnt = 0;
+      for (const pda of pdas) {
+        transaction.add(
+          program.instruction.closePda({
+            accounts: {
+              signer: wallet.publicKey,
+              pda: pda.pubkey,
+              systemProgram: SystemProgram.programId
+            }
+          })
+        );
+        cnt++;
+        if (cnt % 10 === 0) {
+          txns.push(transaction);
+          transaction = new Transaction();
+        }
+      }
+      if (cnt % 10 && transaction.instructions.length > 0) txns.push(transaction);
+      const recentBlockhash = await (await program.provider.connection.getLatestBlockhash('finalized')).blockhash;
+      for (const transaction of txns) {
+        transaction.feePayer = wallet.publicKey;
+        transaction.recentBlockhash = recentBlockhash;
+      }
+      const signedTxns = await wallet.signAllTransactions(txns);
+      const txSignatures = [];
+      for (const signedTxn of signedTxns) {
+        const txSignature = await program.provider.connection.sendRawTransaction(signedTxn.serialize());
+        txSignatures.push(txSignature);
+      }
+      for (const txSignature of txSignatures) {
+        await program.provider.connection.confirmTransaction(txSignature, "confirmed");
+      }
+      return txSignatures;
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  }
+
   useEffect(() => {
     fetchWalletNfts();
-  }, [wallet.publicKey, network, programID]);
+  }, [wallet.publicKey, program, provider]);
 
   if (!wallet.connected) {
     /* If the user's wallet is not connected, display connect wallet button. */
@@ -400,6 +509,13 @@ export default function GiftPage() {
                 </option>
               ))}
             </select>
+            <input
+              className="w-[450px] border-2 border-black p-2"
+              onChange={(e) => {
+                setNewTokenMint(e.target.value);
+              }}
+              value={newTokenMint}
+            />
           </div>
 
           <div>
@@ -431,15 +547,63 @@ export default function GiftPage() {
             Create Gift
           </button>
         </div>
-        <div className="w-full grid grid-cols-4">
+
+        <div>
+          Withdraw Wallet:{" "}
+          <input
+            className="w-[450px] border-2 border-black p-2"
+            onChange={(e) => {
+              setWithdrawAddress(e.target.value);
+            }}
+            value={withdrawAddress}
+          />
+        </div>
+
+        <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button>
+
+        <div className="w-full grid grid-cols-4 gap-2">
           {giftNfts.map(nft => (
             <div key={nft.mint.toString()} className="flex flex-col gap-2 border border-black p-2 rounded-md items-center justify-center">
               <p className="">{nft.name}</p>
               <img src={nft.image} alt="" className="w-full h-full" />
-              {nft.gift.redeemed ? <p>Redeemed</p> : <button className="w-full border border-black p-2 rounded-md" onClick={() => redeem(nft)}>Redeem</button>}
+              <p>Expire at: {new Date(nft.gift.expirationTime.toNumber() * 1000).toLocaleString()}</p>
+              {nft.gift.redeemed ? <p>Redeemed</p> : (
+                (nft.gift.expirationTime.toNumber() * 1000 < new Date().getTime()) ?
+                  <p>Expired</p> :
+                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => redeem(nft)}>Redeem</button>)}
+              {nft.gift.burned ?
+                <p>Burned</p> :
+                (nft.gift.expirationTime.toNumber() * 1000 < new Date().getTime() &&
+                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => burn(nft)}>Burn</button>)}
             </div>
           ))}
         </div>
+
+        <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => fetchAllGifts()}>Refresh</button>
+        <table className="my-2 border border-black w-full border-collapse">
+          <thead>
+            <tr className="border border-black">
+              <td>No</td>
+              <td>TokenAddress</td>
+              <td>Expiration Time</td>
+              <td>Token Amount</td>
+              <td>Redeem</td>
+              <td>Burn</td>
+            </tr>
+          </thead>
+          <tbody>
+            {gifts.map((gift: GiftData, index: number) => (
+              <tr className="border border-black">
+                <td>{index + 1}</td>
+                <td>{gift.splTokenMint.toString()}</td>
+                <td>{new Date(gift.expirationTime.toNumber() * 1000).toLocaleString()}</td>
+                <td>{gift.tokenAmount.toString()}</td>
+                <td>{gift.redeemed ? "Redeemed" : ""}</td>
+                <td>{gift.burned ? "Burned" : ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

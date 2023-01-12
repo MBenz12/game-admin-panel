@@ -14,6 +14,7 @@ export enum eCurrencyType {
   SCRAP = "SCRAP",
   PYJ = "PYJ",
   LINX = "LINX",
+  DUST_DEVNET = "DUST_DEVNET",
 }
 
 export const SPLTOKENS_MAP: Map<string, string> = new Map();
@@ -21,6 +22,7 @@ SPLTOKENS_MAP.set(eCurrencyType.SKT, 'SKTsW8KvzopQPdamXsPhvkPfwzTenegv3c3PEX4DT1
 SPLTOKENS_MAP.set(eCurrencyType.CRECK, 'Ao94rg8D6oK2TAq3nm8YEQxfS73vZ2GWYw2AKaUihDEY');
 SPLTOKENS_MAP.set('CRECK_D', 'ASxC3n3smkcUkA7Z58EUKZ2NfHoQ8eZrkTRK7ergYr2a');
 SPLTOKENS_MAP.set(eCurrencyType.DUST, 'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ');
+SPLTOKENS_MAP.set(eCurrencyType.DUST_DEVNET, '8kY8hSzXbD9uwmNtsDtRmSxQhbVwAK22kaJVbWzvQwn3');
 SPLTOKENS_MAP.set('DUST_D', '8kY8hSzXbD9uwmNtsDtRmSxQhbVwAK22kaJVbWzvQwn3');
 SPLTOKENS_MAP.set(eCurrencyType.FORGE, 'FoRGERiW7odcCBGU1bztZi16osPBHjxharvDathL5eds');
 SPLTOKENS_MAP.set(eCurrencyType.USDC, 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');

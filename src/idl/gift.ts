@@ -193,6 +193,88 @@ export type Gift = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "burnGift",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "target",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gift",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "splTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "giftTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closePda",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "pda",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -244,6 +326,10 @@ export type Gift = {
             "type": "bool"
           },
           {
+            "name": "burned",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -274,8 +360,18 @@ export type Gift = {
     },
     {
       "code": 6004,
+      "name": "NotExpired",
+      "msg": "Time Not Expired"
+    },
+    {
+      "code": 6005,
       "name": "InvalidHolder",
       "msg": "Invalid Gate Token Holder"
+    },
+    {
+      "code": 6006,
+      "name": "ExpireMinTime",
+      "msg": "Expire time should be at least 8hrs"
     }
   ]
 };
@@ -475,6 +571,88 @@ export const IDL: Gift = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "burnGift",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "target",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gift",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "splTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "giftTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closePda",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "pda",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -526,6 +704,10 @@ export const IDL: Gift = {
             "type": "bool"
           },
           {
+            "name": "burned",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -556,8 +738,18 @@ export const IDL: Gift = {
     },
     {
       "code": 6004,
+      "name": "NotExpired",
+      "msg": "Time Not Expired"
+    },
+    {
+      "code": 6005,
       "name": "InvalidHolder",
       "msg": "Invalid Gate Token Holder"
+    },
+    {
+      "code": 6006,
+      "name": "ExpireMinTime",
+      "msg": "Expire time should be at least 8hrs"
     }
   ]
 };

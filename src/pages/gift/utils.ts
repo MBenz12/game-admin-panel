@@ -49,5 +49,6 @@ export type GiftData = {
     gateTokenAmount: BN;
     verifiedCreators: PublicKey[];
     redeemed: boolean;
+    burned: boolean;
     bump: number;
 }
