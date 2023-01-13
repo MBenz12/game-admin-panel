@@ -44,7 +44,7 @@ export default function GiftPage() {
   const [giftNfts, setGiftNfts] = useState<NftData[]>([]);
   const [gateTokenAddress, setGateTokenAddress] = useState(NATIVE_MINT.toString());
   const [gateTokenAmount, setGateTokenAmount] = useState(0);
-  const [expirationTime, setExpirationTime] = useState(new Date().getTime());
+  const [expirationTime, setExpirationTime] = useState(0);
   const [verifiedCreators, setVerifiedCreators] = useState<string[]>(['']);
   const [nftName, setNftName] = useState("Gift 1");
   const [nftSymbol, setNftSymbol] = useState("DOG");
@@ -204,7 +204,7 @@ export default function GiftPage() {
           nftName,
           nftSymbol,
           nftUri,
-          new BN(expirationTime),
+          new BN(expirationTime || Math.floor(new Date().getTime() / 1000)),
           new BN(gateTokenAmount * decimals),
           gateTokenMint,
           verifiedCreators.filter(creator => creator).map(creator => new PublicKey(creator)),
@@ -294,7 +294,7 @@ export default function GiftPage() {
     try {
       // const nftMint = nft.mint;
       const [gift] = await getGiftAddress(nftMint);
-      const target = destinationAddress || new PublicKey(withdrawAddress);
+      const target = withdrawAddress ? new PublicKey(withdrawAddress) : (destinationAddress || new PublicKey(withdrawAddress));
       // const splTokenMint = nft.gift.splTokenMint;
       const giftTokenAta = await getAta(splTokenMint, gift, true);
       const targetTokenAta = await getAta(splTokenMint, target);
@@ -634,14 +634,14 @@ export default function GiftPage() {
                 <td>{gift.destinationAddress.toString()}</td>
                 <td>{gift.nftMint.toString()}</td>
                 <td>{new Date(gift.expirationTime.toNumber() * 1000).toLocaleString()}</td>
-                <td>{gift.tokenAmount.toNumber() / (gift.decimals || 1)}</td>
+                <td className="text-center">{gift.tokenAmount.toNumber() / (gift.decimals || 1)}</td>
                 <td>{gift.redeemed ? "Redeemed" : ""}</td>
                 <td>
                   {gift.burned ? "Burned" :
                     (gift.expirationTime.toNumber() * 1000 <= new Date().getTime() &&
                       <button
                         className="border border-black px-2 py-1 cursor-pointer"
-                        onClick={() => burn(gift.nftMint, gift.splTokenMint, gift.destinationAddress)}>
+                        onClick={() => burn(gift.nftMint, gift.splTokenMint, gift.creator)}>
                         Burn
                       </button>)}
                 </td>
