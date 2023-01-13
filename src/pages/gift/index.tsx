@@ -51,7 +51,7 @@ export default function GiftPage() {
   const [nftUri, setNftUri] = useState("https://arweave.net/0NB1dSUJMZvC_M65xVlFdpAh_WLrukzD0RlT9eZN5OA");
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [gifts, setGifts] = useState<Array<GiftData>>([]);
-
+  const [walletNfts, setWalletNfts] = useState<Array<string>>([]);
   useEffect(() => {
     if (!wallet.publicKey) return;
 
@@ -66,7 +66,14 @@ export default function GiftPage() {
     if (!provider || !program) return;
     try {
       const gifts = await program.account.gift.all();
-      setGifts(gifts.map(gift => gift.account));
+      const sortedGifts = await Promise.all(gifts.map(async (gift) => {
+        const mint = gift.account.splTokenMint;
+        const mintAccount = await getMint(provider.connection, mint);
+        const decimals = Math.pow(10, mintAccount.decimals);
+        return { ...gift.account, decimals };
+      }));
+      sortedGifts.sort((a, b) => a.expirationTime.toNumber() - b.expirationTime.toNumber());
+      setGifts(sortedGifts);
       console.log(gifts);
     } catch (error) {
       console.log(error);
@@ -79,6 +86,8 @@ export default function GiftPage() {
       fetchAllGifts();
       console.log("fetching gift");
       const nfts = await metaplex.nfts().findAllByOwner({ owner: provider.wallet.publicKey }).run();
+      // @ts-ignore
+      setWalletNfts(nfts.map(nft => nft.mintAddress.toString()));
       const gifts: NftData[] = [];
       await Promise.all(nfts.map(async (nft) => {
         // @ts-ignore
@@ -87,13 +96,15 @@ export default function GiftPage() {
         try {
           const giftData = await program.account.gift.fetchNullable(gift);
           if (giftData) {
+            const mintAccount = await getMint(provider.connection, giftData.splTokenMint);
+            const decimals = Math.pow(10, mintAccount.decimals);
             gifts.push({
               mint,
               name: nft.name,
               symbol: nft.symbol,
               uri: nft.uri,
               image: "",
-              gift: giftData
+              gift: { ...giftData, decimals },
             });
           }
         } catch (error) {
@@ -153,6 +164,9 @@ export default function GiftPage() {
       const mintAccount = await getMint(provider.connection, gateTokenMint);
       const decimals = Math.pow(10, mintAccount.decimals);
 
+      const giftTokenMint = await getMint(provider.connection, splTokenMint);
+      const giftDecimals = Math.pow(10, giftTokenMint.decimals);
+
       const transaction = new Transaction();
 
       if (newTokenMint === NATIVE_MINT.toString()) {
@@ -163,7 +177,7 @@ export default function GiftPage() {
           SystemProgram.transfer({
             fromPubkey: provider.wallet.publicKey,
             toPubkey: creatorTokenAta,
-            lamports: tokenAmount * LAMPORTS_PER_SOL,
+            lamports: tokenAmount * giftDecimals,
           }),
           createSyncNativeInstruction(creatorTokenAta)
         );
@@ -186,7 +200,7 @@ export default function GiftPage() {
 
       transaction.add(
         program.instruction.createGift(
-          new BN(tokenAmount * LAMPORTS_PER_SOL),
+          new BN(tokenAmount * giftDecimals),
           nftName,
           nftSymbol,
           nftUri,
@@ -275,13 +289,13 @@ export default function GiftPage() {
     }
   }
 
-  async function burn(nft: NftData) {
+  async function burn(nftMint: PublicKey, splTokenMint: PublicKey, destinationAddress?: PublicKey) {
     if (!provider || !program) return;
     try {
-      const nftMint = nft.mint;
+      // const nftMint = nft.mint;
       const [gift] = await getGiftAddress(nftMint);
-      const target = new PublicKey(withdrawAddress);
-      const splTokenMint = nft.gift.splTokenMint;
+      const target = destinationAddress || new PublicKey(withdrawAddress);
+      // const splTokenMint = nft.gift.splTokenMint;
       const giftTokenAta = await getAta(splTokenMint, gift, true);
       const targetTokenAta = await getAta(splTokenMint, target);
       const transaction = new Transaction();
@@ -509,6 +523,21 @@ export default function GiftPage() {
                 </option>
               ))}
             </select>
+            <p>NFTs:</p>
+            <select
+              className="border-2 border-black p-2"
+              onChange={(e) => {
+                setNewTokenMint(e.target.value);
+                setTokenAmount(1);
+              }}
+              value={newTokenMint}
+            >
+              {walletNfts.map((nft) => (
+                <option value={nft} key={nft}>
+                  {nft}
+                </option>
+              ))}
+            </select>
             <input
               className="w-[450px] border-2 border-black p-2"
               onChange={(e) => {
@@ -559,7 +588,7 @@ export default function GiftPage() {
           />
         </div>
 
-        <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button>
+        {/* <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button> */}
 
         <div className="w-full grid grid-cols-4 gap-2">
           {giftNfts.map(nft => (
@@ -574,7 +603,11 @@ export default function GiftPage() {
               {nft.gift.burned ?
                 <p>Burned</p> :
                 (nft.gift.expirationTime.toNumber() * 1000 < new Date().getTime() &&
-                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => burn(nft)}>Burn</button>)}
+                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => burn(nft.mint, nft.gift.splTokenMint)}>Burn</button>)}
+
+              <p>Author: {nft.gift.creator.toString()}</p>
+              <p>Destination: {nft.gift.destinationAddress.toString()}</p>
+              <p>{nft.gift.splTokenMint.toString()} - {nft.gift.tokenAmount.toNumber() / (nft.gift.decimals || 1)}</p>
             </div>
           ))}
         </div>
@@ -584,6 +617,8 @@ export default function GiftPage() {
           <thead>
             <tr className="border border-black">
               <td>No</td>
+              <td>Creator Address</td>
+              <td>Destination Address</td>
               <td>TokenAddress</td>
               <td>Expiration Time</td>
               <td>Token Amount</td>
@@ -595,11 +630,21 @@ export default function GiftPage() {
             {gifts.map((gift: GiftData, index: number) => (
               <tr className="border border-black">
                 <td>{index + 1}</td>
-                <td>{gift.splTokenMint.toString()}</td>
+                <td>{gift.creator.toString()}</td>
+                <td>{gift.destinationAddress.toString()}</td>
+                <td>{gift.nftMint.toString()}</td>
                 <td>{new Date(gift.expirationTime.toNumber() * 1000).toLocaleString()}</td>
-                <td>{gift.tokenAmount.toString()}</td>
+                <td>{gift.tokenAmount.toNumber() / (gift.decimals || 1)}</td>
                 <td>{gift.redeemed ? "Redeemed" : ""}</td>
-                <td>{gift.burned ? "Burned" : ""}</td>
+                <td>
+                  {gift.burned ? "Burned" :
+                    (gift.expirationTime.toNumber() * 1000 <= new Date().getTime() &&
+                      <button
+                        className="border border-black px-2 py-1 cursor-pointer"
+                        onClick={() => burn(gift.nftMint, gift.splTokenMint, gift.destinationAddress)}>
+                        Burn
+                      </button>)}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -51,4 +51,5 @@ export type GiftData = {
     redeemed: boolean;
     burned: boolean;
     bump: number;
+    decimals?: number;
 }
