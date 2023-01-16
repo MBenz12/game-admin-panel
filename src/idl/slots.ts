@@ -122,17 +122,17 @@ export type Slots = {
       ],
       "args": [
         {
+          "name": "betPrices",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
           "name": "winPercents",
           "type": {
-            "array": [
-              {
-                "array": [
-                  "u16",
-                  3
-                ]
-              },
-              6
-            ]
+            "vec": {
+              "vec": "u16"
+            }
           }
         },
         {
@@ -224,6 +224,10 @@ export type Slots = {
         {
           "name": "betNo",
           "type": "u8"
+        },
+        {
+          "name": "numberOfPlay",
+          "type": "u16"
         }
       ]
     },
@@ -432,15 +436,15 @@ export type Slots = {
           {
             "name": "winPercents",
             "type": {
-              "array": [
-                {
-                  "array": [
-                    "u16",
-                    3
-                  ]
-                },
-                6
-              ]
+              "vec": {
+                "vec": "u16"
+              }
+            }
+          },
+          {
+            "name": "betPrices",
+            "type": {
+              "vec": "u64"
             }
           },
           {
@@ -647,17 +651,17 @@ export const IDL: Slots = {
       ],
       "args": [
         {
+          "name": "betPrices",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
           "name": "winPercents",
           "type": {
-            "array": [
-              {
-                "array": [
-                  "u16",
-                  3
-                ]
-              },
-              6
-            ]
+            "vec": {
+              "vec": "u16"
+            }
           }
         },
         {
@@ -749,6 +753,10 @@ export const IDL: Slots = {
         {
           "name": "betNo",
           "type": "u8"
+        },
+        {
+          "name": "numberOfPlay",
+          "type": "u16"
         }
       ]
     },
@@ -957,15 +965,15 @@ export const IDL: Slots = {
           {
             "name": "winPercents",
             "type": {
-              "array": [
-                {
-                  "array": [
-                    "u16",
-                    3
-                  ]
-                },
-                6
-              ]
+              "vec": {
+                "vec": "u16"
+              }
+            }
+          },
+          {
+            "name": "betPrices",
+            "type": {
+              "vec": "u64"
             }
           },
           {

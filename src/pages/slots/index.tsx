@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as anchor from "@project-serum/anchor";
-import { Program, AnchorProvider } from "@project-serum/anchor";
+import { Program, AnchorProvider, BN } from "@project-serum/anchor";
 import { createCloseAccountInstruction, createSyncNativeInstruction, NATIVE_MINT, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
@@ -33,7 +33,7 @@ export default function SlotsPage() {
     return { provider, program };
   }
 
-  const [prices] = useState([0.05, 0.1, 0.25, 0.5, 1, 2]);
+  const [prices, setPrices] = useState([0.05, 0.1, 0.25, 0.5, 1, 2]);
   const [price, setPrice] = useState(0.05);
   const [betNo, setBetNo] = useState(0);
   const [gameData, setGameData] = useState<any>();
@@ -48,6 +48,7 @@ export default function SlotsPage() {
   const [commissionWallet, setCommissionWallet] = useState(default_commission.toString());
   const [commissionFee, setCommissionFee] = useState(3);
   const [minRoundsBeforeWin, setMinRoundsBeforeWin] = useState(5);
+  const [numberOfPlay, setNumberOfPlay] = useState(0);
   const [winPercents, setWinPercents] = useState([
     [25, 15, 7.5],
     [20, 10, 5],
@@ -60,13 +61,13 @@ export default function SlotsPage() {
   const [jackpot, setJackpot] = useState(14.4);
   const [communityWallets, setCommunityWallets] = useState<Array<string>>([]);
   const [newCommunityWallets, setNewCommunityWallets] = useState<Array<string>>([default_community.toString()]);
-  
+
   const tokens = [
     { symbol: 'SOL', address: NATIVE_MINT.toString() },
     { symbol: 'SKT', address: SPLTOKENS_MAP.get(eCurrencyType.SKT) },
     { symbol: 'FORGE', address: SPLTOKENS_MAP.get(eCurrencyType.FORGE) },
     { symbol: 'DUST', address: SPLTOKENS_MAP.get(eCurrencyType.DUST) },
-    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },    
+    { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },
   ];
 
   const [tokenSymbol, setTokenSymbol] = useState('SOL');
@@ -180,9 +181,9 @@ export default function SlotsPage() {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const [player, bump] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
-  
+
       const transaction = new Transaction();
-  
+
       transaction.add(
         program.transaction.addPlayer(bump, {
           accounts: {
@@ -209,12 +210,12 @@ export default function SlotsPage() {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
-  
+
       const transaction = new Transaction();
       const gameData = await program.account.game.fetchNullable(game);
       if (!gameData) return;
       const mint = gameData.tokenMint;
-  
+
       const payerAta = await getAta(mint, provider.wallet.publicKey);
       let instruction = await getCreateAtaInstruction(provider, payerAta, mint, provider.wallet.publicKey);
       if (instruction) transaction.add(instruction);
@@ -223,7 +224,7 @@ export default function SlotsPage() {
           SystemProgram.transfer({
             fromPubkey: provider.wallet.publicKey,
             toPubkey: payerAta,
-            lamports: prices[betNo] * LAMPORTS_PER_SOL,
+            lamports: prices[betNo] * numberOfPlay * LAMPORTS_PER_SOL,
           }),
           createSyncNativeInstruction(payerAta)
         );
@@ -234,7 +235,7 @@ export default function SlotsPage() {
       instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
       if (instruction) transaction.add(instruction);
       transaction.add(
-        program.transaction.play(betNo, {
+        program.transaction.play(betNo, numberOfPlay, {
           accounts: {
             payer: provider.wallet.publicKey,
             payerAta,
@@ -247,7 +248,7 @@ export default function SlotsPage() {
           },
         })
       );
-  
+
       for (const communityWallet of gameData.communityWallets) {
         const communityTreasuryAta = await getAta(mint, communityWallet);
         transaction.add(
@@ -264,13 +265,13 @@ export default function SlotsPage() {
       const txSignature = await wallet.sendTransaction(transaction, provider.connection, { skipPreflight: true });
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
-  
+
       const playerData = await program.account.player.fetchNullable(player);
       let status = playerData?.status;
       console.log(status);
       if (status) {
         await fetchData();
-      }      
+      }
       toast.success('Success');
     } catch (error) {
       console.log(error);
@@ -278,8 +279,7 @@ export default function SlotsPage() {
     }
   }
 
-  async function fetchData()
-  {
+  async function fetchData() {
     const { provider, program } = getProviderAndProgram();
     if (!provider.wallet) return;
 
@@ -328,8 +328,7 @@ export default function SlotsPage() {
       });
       setWinPercents(winPercents);
     }
-    else
-    {
+    else {
       setCommunityWallets([]);
       setNewCommunityWallets([default_community.toString()]);
       setNewRoyalties([5]);
@@ -343,9 +342,9 @@ export default function SlotsPage() {
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const [player] = await getPlayerAddress(program.programId, provider.wallet.publicKey, game);
       const mint = gameData.tokenMint;
-  
+
       const transaction = new Transaction();
-  
+
       const claimerAta = await getAta(mint, provider.wallet.publicKey);
       const instruction = await getCreateAtaInstruction(provider, claimerAta, mint, provider.wallet.publicKey);
       if (instruction) transaction.add(instruction);
@@ -381,7 +380,7 @@ export default function SlotsPage() {
     try {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
-  
+
       const transaction = new Transaction();
       const mint = gameData.tokenMint;
       const claimerAta = await getAta(mint, provider.wallet.publicKey);
@@ -415,9 +414,9 @@ export default function SlotsPage() {
       const { provider, program } = getProviderAndProgram();
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const transaction = new Transaction();
-  
+
       const mint = gameData.tokenMint;
-  
+
       const commissionTreasury = new PublicKey(commissionWallet);
       if ((await program.provider.connection.getBalance(commissionTreasury)) === 0) {
         transaction.add(
@@ -430,10 +429,10 @@ export default function SlotsPage() {
         );
       }
       const commissionTreasuryAta = await getAta(mint, commissionTreasury);
-  
+
       const instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
       if (instruction) transaction.add(instruction);
-  
+
       transaction.add(
         program.transaction.setCommission(new PublicKey(commissionWallet), commissionFee * 100, {
           accounts: {
@@ -460,6 +459,7 @@ export default function SlotsPage() {
       const transaction = new Transaction();
       transaction.add(
         program.transaction.setWinning(
+          prices.map(price => new BN(price * LAMPORTS_PER_SOL)),
           winPercents.map((percents) => {
             const boundries = [...percents];
             for (let i = 1; i >= 0; i--) {
@@ -494,7 +494,7 @@ export default function SlotsPage() {
       const [game] = await getGameAddress(program.programId, gamename, provider.wallet.publicKey);
       const transaction = new Transaction();
       const mint = gameData.tokenMint;
-  
+
       const funderAta = await getAta(mint, provider.wallet.publicKey);
       const gameTreasuryAta = await getAta(mint, game, true);
       let instruction = await getCreateAtaInstruction(provider, funderAta, mint, provider.wallet.publicKey);
@@ -520,7 +520,7 @@ export default function SlotsPage() {
           },
         })
       );
-  
+
       const txSignature = await wallet.sendTransaction(transaction, provider.connection);
       await provider.connection.confirmTransaction(txSignature, "confirmed");
       console.log(txSignature);
@@ -569,7 +569,7 @@ export default function SlotsPage() {
       <div className="ml-5 flex gap-2 flex-col ">
         <StorageSelect itemkey={"slots-programId"} label="Program ID" setItem={setProgramID} defaultItems={deafultProgramIDs} defaultItem={programID} />
         <StorageSelect itemkey={"slots-gamename"} label="Game Name" setItem={setGamename} defaultItems={deafultGamenames} defaultItem={gamename} />
-        
+
         <div className="flex gap-2 items-center">
           <p>Token Name:</p>
           <select
@@ -700,8 +700,19 @@ export default function SlotsPage() {
           <>
             {winPercents.map((percents, row) => (
               <div className="flex gap-2 items-center" key={"row" + row}>
-                <div className="w-[150px]">
-                  Bet {prices[row]} {tokenSymbol}:
+                <div>
+                  Bet
+                  <input
+                    className="border-2 border-black p-2"
+                    type={"number"}
+                    min={0}
+                    step={0.05}
+                    onChange={(e) => {
+                      setPrices(prices.map((price, i) => row === i ? parseFloat(e.target.value) || 0 : price));
+                    }}
+                    value={`${prices[row]}`}
+                  />
+                  {tokenSymbol}:
                 </div>
                 {percents.map((percent, index) => (
                   <div key={"col" + index}>
@@ -792,6 +803,16 @@ export default function SlotsPage() {
                   </option>
                 ))}
               </select>
+              <input
+                className="border-2 border-black p-2"
+                type={"number"}
+                min={1}
+                step={1}
+                onChange={(e) => {
+                  setNumberOfPlay(parseInt(e.target.value) || 0);
+                }}
+                value={numberOfPlay}
+              />
               <button className="border-2 border-black p-2" onClick={play}>
                 Play
               </button>

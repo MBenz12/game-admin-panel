@@ -122,17 +122,17 @@
       ],
       "args": [
         {
+          "name": "betPrices",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
           "name": "winPercents",
           "type": {
-            "array": [
-              {
-                "array": [
-                  "u16",
-                  3
-                ]
-              },
-              6
-            ]
+            "vec": {
+              "vec": "u16"
+            }
           }
         },
         {
@@ -224,6 +224,10 @@
         {
           "name": "betNo",
           "type": "u8"
+        },
+        {
+          "name": "numberOfPlay",
+          "type": "u16"
         }
       ]
     },
@@ -432,15 +436,15 @@
           {
             "name": "winPercents",
             "type": {
-              "array": [
-                {
-                  "array": [
-                    "u16",
-                    3
-                  ]
-                },
-                6
-              ]
+              "vec": {
+                "vec": "u16"
+              }
+            }
+          },
+          {
+            "name": "betPrices",
+            "type": {
+              "vec": "u64"
             }
           },
           {

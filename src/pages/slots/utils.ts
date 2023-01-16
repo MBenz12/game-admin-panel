@@ -4,7 +4,7 @@ export const idl_slots = require("idl/slots.json");
 export const slots_pda_seed = "slots_game_pda";
 export const player_pda_seed = "player_pda";
 
-export const game_name = "test4";
+export const game_name = "test6";
 export const game_owner = new PublicKey("3qWq2ehELrVJrTg2JKKERm67cN6vYjm1EyhCEzfQ6jMd");
 export const default_commission = new PublicKey("SERVUJeqsyaJTuVuXAmmko6kTigJmxzTxUMSThpC2LZ");
 export const default_community = new PublicKey("7AqzmPxixBqbGh6RA49DA4kyKYBWT2UBNbBLhxC1XfCH");
