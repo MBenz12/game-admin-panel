@@ -2,7 +2,7 @@ import { Metaplex } from "@metaplex-foundation/js";
 import * as anchor from '@project-serum/anchor';
 import { AnchorProvider } from "@project-serum/anchor";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress } from "@solana/spl-token-v2";
+import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, getMint } from "@solana/spl-token-v2";
 import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import { adminWallets } from "./constants";
 
@@ -130,4 +130,10 @@ export async function getCreateAtaInstruction(provider: AnchorProvider, ata: Pub
             mint,
         );
     }
+}
+
+export async function getDecimals(provider: AnchorProvider, mint: PublicKey) {
+    const mintAccount = await getMint(provider.connection, mint);
+    const decimals = Math.pow(10, mintAccount.decimals);
+    return decimals;
 }

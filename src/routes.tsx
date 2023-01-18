@@ -1,3 +1,4 @@
+import { Route, Routes } from "react-router-dom";
 import Header from "components/Header";
 import CoinflipPage from "pages/coinflip";
 import MyNftMachine from "pages/nft";
@@ -6,8 +7,8 @@ import AuctionPage from "pages/auction";
 import OraoPage from "pages/orao";
 import Rust from "pages/rust";
 import SlotsPage from "pages/slots";
-import { Route, Routes } from "react-router-dom";
 import GiftPage from "pages/gift";
+import LootboxPage from "pages/lootbox";
 
 const Router = () => {
   return (
@@ -21,6 +22,7 @@ const Router = () => {
       <Route path="/auction" element={<AuctionPage />} />
       <Route path="/gift" element={<GiftPage />} />
       <Route path="/orao" element={<OraoPage />} />
+      <Route path="/lootbox" element={<LootboxPage />} />
     </Routes>
   );
 };

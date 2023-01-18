@@ -26,6 +26,9 @@ export default function Header() {
         <li>
           <a className="text-white" href="/gift">Gift</a>
         </li>
+        <li>
+          <a className="text-white" href="/lootbox">Lootbox</a>
+        </li>
       </ul>
     </div>
   );
