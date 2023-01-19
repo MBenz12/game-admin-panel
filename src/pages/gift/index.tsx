@@ -49,7 +49,7 @@ export default function GiftPage() {
   const [nftName, setNftName] = useState("Gift 1");
   const [nftSymbol, setNftSymbol] = useState("DOG");
   const [nftUri, setNftUri] = useState("https://arweave.net/0NB1dSUJMZvC_M65xVlFdpAh_WLrukzD0RlT9eZN5OA");
-  const [withdrawAddress, setWithdrawAddress] = useState("");
+  // const [withdrawAddress, setWithdrawAddress] = useState("");
   const [gifts, setGifts] = useState<Array<GiftData>>([]);
   const [walletNfts, setWalletNfts] = useState<Array<string>>([]);
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function GiftPage() {
         }
       }
     } catch (error) {
-
+      console.log(error);
     }
   }
 
@@ -285,16 +285,17 @@ export default function GiftPage() {
       fetchWalletNfts();
       toast.success("Success");
     } catch (error) {
-
+      console.log(error);
+      toast.error("Failed");
     }
   }
 
-  async function burn(nftMint: PublicKey, splTokenMint: PublicKey, destinationAddress?: PublicKey) {
+  async function burn(nftMint: PublicKey, splTokenMint: PublicKey, destinationAddress: PublicKey) {
     if (!provider || !program) return;
     try {
       // const nftMint = nft.mint;
       const [gift] = await getGiftAddress(nftMint);
-      const target = withdrawAddress ? new PublicKey(withdrawAddress) : (destinationAddress || new PublicKey(withdrawAddress));
+      const target = destinationAddress;
       // const splTokenMint = nft.gift.splTokenMint;
       const giftTokenAta = await getAta(splTokenMint, gift, true);
       const targetTokenAta = await getAta(splTokenMint, target);
@@ -325,7 +326,8 @@ export default function GiftPage() {
       fetchWalletNfts();
       toast.success("Success");
     } catch (error) {
-
+      console.log(error);
+      toast.error("Failed");
     }
   }
 
@@ -453,6 +455,7 @@ export default function GiftPage() {
                 onChange={(e) => {
                   setExpirationTime(new Date(e.target.value).getTime() / 1000);
                 }}
+                onFocus={(e) => e.target.showPicker()}
                 defaultValue={""}
               />
             </div>
@@ -577,7 +580,7 @@ export default function GiftPage() {
           </button>
         </div>
 
-        <div>
+        {/* <div>
           Withdraw Wallet:{" "}
           <input
             className="w-[450px] border-2 border-black p-2"
@@ -586,13 +589,13 @@ export default function GiftPage() {
             }}
             value={withdrawAddress}
           />
-        </div>
+        </div> */}
 
         {/* <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button> */}
 
         <div className="w-full grid grid-cols-4 gap-2">
           {giftNfts.map(nft => (
-            <div key={nft.mint.toString()} className="flex flex-col gap-2 border border-black p-2 rounded-md items-center justify-center">
+            <div key={nft.mint.toString()} className="flex flex-col gap-2 border border-black p-2 rounded-md items-center justify-center text-[12px]">
               <p className="">{nft.name}</p>
               <img src={nft.image} alt="" className="w-full h-full" />
               <p>Expire at: {new Date(nft.gift.expirationTime.toNumber() * 1000).toLocaleString()}</p>
@@ -603,7 +606,7 @@ export default function GiftPage() {
               {nft.gift.burned ?
                 <p>Burned</p> :
                 (nft.gift.expirationTime.toNumber() * 1000 < new Date().getTime() &&
-                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => burn(nft.mint, nft.gift.splTokenMint)}>Burn</button>)}
+                  <button className="w-full border border-black p-2 rounded-md cursor-pointer" onClick={() => burn(nft.mint, nft.gift.splTokenMint, nft.gift.creator)}>Burn</button>)}
 
               <p>Author: {nft.gift.creator.toString()}</p>
               <p>Destination: {nft.gift.destinationAddress.toString()}</p>
@@ -613,7 +616,7 @@ export default function GiftPage() {
         </div>
 
         <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => fetchAllGifts()}>Refresh</button>
-        <table className="my-2 border border-black w-full border-collapse">
+        <table className="my-2 border border-black w-full border-collapse text-[13px]">
           <thead>
             <tr className="border border-black">
               <td>No</td>
@@ -638,7 +641,7 @@ export default function GiftPage() {
                 <td>{gift.redeemed ? "Redeemed" : ""}</td>
                 <td>
                   {gift.burned ? "Burned" :
-                    (gift.expirationTime.toNumber() * 1000 <= new Date().getTime() &&
+                    (!gift.redeemed && gift.expirationTime.toNumber() * 1000 <= new Date().getTime() &&
                       <button
                         className="border border-black px-2 py-1 cursor-pointer"
                         onClick={() => burn(gift.nftMint, gift.splTokenMint, gift.creator)}>
