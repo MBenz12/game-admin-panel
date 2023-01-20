@@ -591,7 +591,7 @@ export default function GiftPage() {
           />
         </div> */}
 
-        {/* <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button> */}
+        <button className="w-fit border border-black p-2 rounded-md cursor-pointer" onClick={() => closeAllGift()}>Close All Gift</button>
 
         <div className="w-full grid grid-cols-4 gap-2">
           {giftNfts.map(nft => (

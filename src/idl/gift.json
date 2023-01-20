@@ -322,6 +322,14 @@
             "type": "u64"
           },
           {
+            "name": "createdTime",
+            "type": "u64"
+          },
+          {
+            "name": "redeemedTime",
+            "type": "u64"
+          },
+          {
             "name": "redeemed",
             "type": "bool"
           },

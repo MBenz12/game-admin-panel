@@ -45,6 +45,8 @@ export type GiftData = {
     tokenAmount: BN;
     nftMint: PublicKey;
     expirationTime: BN;
+    createdTime: BN;
+    redeemedTime: BN;
     gateTokenMint: PublicKey;
     gateTokenAmount: BN;
     verifiedCreators: PublicKey[];

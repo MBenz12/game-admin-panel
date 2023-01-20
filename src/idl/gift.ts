@@ -322,6 +322,14 @@ export type Gift = {
             "type": "u64"
           },
           {
+            "name": "createdTime",
+            "type": "u64"
+          },
+          {
+            "name": "redeemedTime",
+            "type": "u64"
+          },
+          {
             "name": "redeemed",
             "type": "bool"
           },
@@ -697,6 +705,14 @@ export const IDL: Gift = {
           },
           {
             "name": "expirationTime",
+            "type": "u64"
+          },
+          {
+            "name": "createdTime",
+            "type": "u64"
+          },
+          {
+            "name": "redeemedTime",
             "type": "u64"
           },
           {
