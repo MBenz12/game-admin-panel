@@ -13,7 +13,7 @@ import { getAta, getCreateAtaInstruction, getSolBalance, isAdmin } from "config/
 import { Slots } from "idl/slots";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { convertLog, default_commission, default_community, game_name, getGameAddress, getPlayerAddress } from "./utils";
+import { convertLog, default_commission, default_community, default_prices, game_name, getGameAddress, getPlayerAddress } from "./utils";
 const idl_slots = require("idl/slots.json");
 
 const deafultProgramIDs = [idl_slots.metadata.address];
@@ -32,8 +32,8 @@ export default function SlotsPage() {
 
     return { provider, program };
   }
-
-  const [prices, setPrices] = useState([0.05, 0.1, 0.25, 0.5, 1, 2]);
+  const [tokenSymbol, setTokenSymbol] = useState('SOL');
+  const [prices, setPrices] = useState(default_prices[tokenSymbol === 'SOL' ? 0 : 1]);
   const [price, setPrice] = useState(0.05);
   const [betNo, setBetNo] = useState(0);
   const [gameData, setGameData] = useState<any>();
@@ -70,7 +70,6 @@ export default function SlotsPage() {
     { symbol: 'USDC', address: SPLTOKENS_MAP.get(eCurrencyType.USDC) },
   ];
 
-  const [tokenSymbol, setTokenSymbol] = useState('SOL');
 
   const [newRoyalties, setNewRoyalties] = useState<Array<number>>([5]);
   const [gamename, setGamename] = useState(game_name);
@@ -113,6 +112,7 @@ export default function SlotsPage() {
       instruction = await getCreateAtaInstruction(provider, commissionTreasuryAta, mint, commissionTreasury);
       if (instruction) transaction.add(instruction);
 
+      console.log(default_prices[tokenSymbol === 'SOL' ? 0 : 1]);
       transaction.add(
         program.transaction.createGame(
           gamename,
@@ -122,6 +122,7 @@ export default function SlotsPage() {
           newRoyalties.map((royalty) => royalty * 100),
           new PublicKey(commissionWallet),
           commissionFee * 100,
+          default_prices[tokenSymbol === 'SOL' ? 0 : 1].map(price => new BN(price * LAMPORTS_PER_SOL)),
           {
             accounts: {
               payer: provider.wallet.publicKey,
@@ -308,6 +309,7 @@ export default function SlotsPage() {
       setCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
       setNewCommunityWallets(gameData.communityWallets.map((key) => key.toString()));
       setNewRoyalties(gameData.royalties.map((royalty) => royalty / 100));
+      setPrices(gameData.betPrices.map((price => price.toNumber() / LAMPORTS_PER_SOL)));
       // setCommunityBalances(gameData.communityBalances.map((balance) => balance.toNumber()));
       const balances: number[] = [];
       for (const communityWallet of gameData.communityWallets) {
@@ -332,7 +334,7 @@ export default function SlotsPage() {
       setCommunityWallets([]);
       setNewCommunityWallets([default_community.toString()]);
       setNewRoyalties([5]);
-      setCommunityBalances([]);
+      setCommunityBalances([]);      
     }
   }
 

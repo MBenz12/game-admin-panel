@@ -10,6 +10,10 @@ export const default_commission = new PublicKey("SERVUJeqsyaJTuVuXAmmko6kTigJmxz
 export const default_community = new PublicKey("7AqzmPxixBqbGh6RA49DA4kyKYBWT2UBNbBLhxC1XfCH");
 export const splTokenMint = new PublicKey("SKTsW8KvzopQPdamXsPhvkPfwzTenegv3c3PEX4DT1o");
 
+export const default_prices = [
+  [ 0.05, 0.1, 0.25, 0.5, 1, 2],
+  [ 1, 2, 5, 10, 25, 50]
+];
 
 export const getGameAddress = async (programId: PublicKey, game_name: string, game_owner: PublicKey) => (
   await PublicKey.findProgramAddress(

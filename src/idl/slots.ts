@@ -53,6 +53,12 @@ export type Slots = {
         {
           "name": "commissionFee",
           "type": "u16"
+        },
+        {
+          "name": "betPrices",
+          "type": {
+            "vec": "u64"
+          }
         }
       ]
     },
@@ -582,6 +588,12 @@ export const IDL: Slots = {
         {
           "name": "commissionFee",
           "type": "u16"
+        },
+        {
+          "name": "betPrices",
+          "type": {
+            "vec": "u64"
+          }
         }
       ]
     },
